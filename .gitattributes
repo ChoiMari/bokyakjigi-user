@@ -1,0 +1,36 @@
+# 모든 텍스트 파일 자동 줄바꿈 관리
+* text=auto
+
+# 쉘 스크립트는 LF 강제
+*.sh text eol=lf
+
+# 윈도우 배치 파일은 CRLF 강제
+*.bat text eol=crlf
+
+# 이미지 파일은 바이너리 처리
+*.png binary
+*.jpg binary
+*.gif binary
+
+#
+# 위 설정은 아래에 명시되지 않은 모든 파일에 적용됩니다.
+#
+# 아래 파일들은 텍스트로 명확히 지정되어 줄바꿈을 통일합니다 (CRLF → LF 변환).
+*.gitattributes text
+.gitignore      text
+*.md            text diff=markdown
+
+#
+# 내보내기(export) 대상에서 제외할 파일들
+#
+
+.gitattributes  export-ignore
+.gitignore      export-ignore
+
+#
+# `.gitattributes` 확장자를 가진 파일에 대해
+# 깃허브에서 문법 하이라이트를 활성화합니다.
+#
+*.gitattributes linguist-language=gitattributes
+*.gitattributes linguist-detectable=true
+*.gitattributes linguist-documentation=false
