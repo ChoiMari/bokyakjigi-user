@@ -42,9 +42,7 @@ dependencyManagement {
 	}
 }
 
-// 의존성 설정 : 프로젝트에서 쓰고 싶은 외부 라이브러리나 모듈을 선언하는 부분
-// 여기에 나열하면 외부 라이브러리를 가져다 쓸 수 있고,
-// gradle이 자동으로 인터넷으로 (Maven Central에서)다운 받아서 프로젝트에 포함 시켜준다
+// 의존성 설정
 dependencies {
 	//Spring Boot 스타터
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -75,19 +73,19 @@ dependencies {
 	// <-----------------
 
 	// jjwt ---------->
-	implementation 'io.jsonwebtoken:jjwt-api:${jjwtVersion}'               // 핵심 API
-	runtimeOnly 'io.jsonwebtoken:jjwt-impl:${jjwtVersion}'                  // 내부 구현체
-	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:${jjwtVersion}'               // JSON 직렬화 (Jackson 기반)
+	implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"               // 핵심 API
+	runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"                  // 내부 구현체
+	runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"               // JSON 직렬화 (Jackson 기반)
 	// <-----------------
 
 	// DB 드라이버
 	runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
 	// DB 마이그레이션
-	implementation 'org.flywaydb:flyway-core:${flywayVersion}'
+	implementation "org.flywaydb:flyway-core:${flywayVersion}"
 
 	// Querydsl ---------->
-	implementation 'com.querydsl:querydsl-jpa:${querydslVersion}:jakarta'
-	annotationProcessor 'com.querydsl:querydsl-apt:${querydslVersion}:jakarta'
+	implementation "com.querydsl:querydsl-jpa:${querydslVersion}:jakarta"
+	annotationProcessor "com.querydsl:querydsl-apt:${querydslVersion}:jakarta"
 	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
 	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
 	// <-----------------
@@ -97,7 +95,7 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 	// API 문서화
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}'
+	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 
 }
 
@@ -127,3 +125,8 @@ clean.doLast { // 빌드 폴더 내 해당 경로를 안전하게 삭제함
 * 	testImplementation : 테스트 코드 작성할 때만 필요함
 * 	api : 모듈 프로젝트용, 다른 모듈에서도 이 라이브러리를 같이 쓰게 할 때
 */
+
+bootJar {
+	// 실행 시 진입점이 되는 클래스 (main() 함수 위치)
+	mainClass = 'com.yakgurt.bokyakjigi.user.BokyakjigiUserApplication'
+}
