@@ -1,48 +1,129 @@
+// 사용할 Gradle 플러그인 설정
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.3'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
+// 프로젝트 기본 정보
 group = 'com.yakgurt.bokyakjigi.user'
 version = '0.0.1-SNAPSHOT'
 
+// 자바 버전 설정
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(21)
 	}
 }
 
+// 컴파일 설정
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
 	}
 }
 
+// 리포지토리 : 라이브러리 가져올 저장소
 repositories {
 	mavenCentral()
 }
 
+// 의존성 버전 관리
+ext {
+	jjwtVersion = '0.12.6'
+	flywayVersion = '11.10.3'
+	querydslVersion = '5.0.0'
+	springdocVersion = '2.1.0'
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.boot:spring-boot-dependencies:3.5.3"
+	}
+}
+
+// 의존성 설정 : 프로젝트에서 쓰고 싶은 외부 라이브러리나 모듈을 선언하는 부분
+// 여기에 나열하면 외부 라이브러리를 가져다 쓸 수 있고,
+// gradle이 자동으로 인터넷으로 (Maven Central에서)다운 받아서 프로젝트에 포함 시켜준다
 dependencies {
+	//Spring Boot 스타터
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
-	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
+
+	//개발 편의 의존성
+	developmentOnly 'org.springframework.boot:spring-boot-devtools' // 개발용 자동 재시작, 캐시 무효화 등 개발 편의 기능
+
+	// 컴파일 타임 애노테이션 처리기
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	// Spring Security ---------->
+	implementation 'org.springframework.boot:spring-boot-starter-security'
 	testImplementation 'org.springframework.security:spring-security-test'
+	// <-----------------
+
+	// lombok ---------->
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testCompileOnly 'org.projectlombok:lombok'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+	// <-----------------
+
+	// jjwt ---------->
+	implementation 'io.jsonwebtoken:jjwt-api:${jjwtVersion}'               // 핵심 API
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:${jjwtVersion}'                  // 내부 구현체
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:${jjwtVersion}'               // JSON 직렬화 (Jackson 기반)
+	// <-----------------
+
+	// DB 드라이버
+	runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
+	// DB 마이그레이션
+	implementation 'org.flywaydb:flyway-core:${flywayVersion}'
+
+	// Querydsl ---------->
+	implementation 'com.querydsl:querydsl-jpa:${querydslVersion}:jakarta'
+	annotationProcessor 'com.querydsl:querydsl-apt:${querydslVersion}:jakarta'
+	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+	// <-----------------
+
+	// 테스트 관련 의존성
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// API 문서화
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}'
+
 }
 
+// 테스트 실행 시 JUnit 플랫폼 사용
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// Querydsl 관련 빌드 옵션 ----- Querydsl이 생성한 Q-타입 클래스들이 저장될 디렉토리
+def querydslDir = layout.buildDirectory.dir("generated/querydsl").get().asFile
+
+sourceSets {
+	main.java.srcDirs += [ querydslDir ] // 생성된 Q타입 소스 경로를 컴파일 대상에 추가
+}
+
+clean.doLast { // 빌드 폴더 내 해당 경로를 안전하게 삭제함
+	querydslDir.deleteDir()
+}
+// <-----------------
+
+/*
+* gradle 참고 지식 정리
+* dependencies 의존성 종류
+* 	implementation : 일반적인 라이브러리(컴파일/실행 시 포함), 이걸 써서 개발 하겠다, 의존성을 구현에 포함시켜라
+* 	compileOnly : 컴파일 시에만 필요함
+* 	runtimeOnly : 실행할 때만 필요함
+* 	testImplementation : 테스트 코드 작성할 때만 필요함
+* 	api : 모듈 프로젝트용, 다른 모듈에서도 이 라이브러리를 같이 쓰게 할 때
+*/
