@@ -23,7 +23,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
              //   .requiresChannel(channel -> // TODO: 곧 없어질 예정이라고 컴파일 경고함, 추후 대체 API 찾아서 적용 필요(deprecation)
-            //            channel.anyRequest().requiresSecure() // 모든 요청에 대해 HTTPS만 허용하도록 강제함(로컬 개발 시에는 주석처리, 안그럼 8443으로 리디렉션 처리됨)
+            //            channel.anyRequest().requiresSecure() // 모든 요청에 대해 HTTPS만 허용하도록 강제함(로컬 개발 시에는 주석처리, 안그럼 8443으로 리디렉션 처리됨) TODO : 배포시에는 주석 지워서 활성화시키기 
             //    )
                 .csrf(csrf -> csrf.disable()) // CSRF 방어 비활성화
                 .authorizeHttpRequests(auth -> auth // 인증/인가 규칙 설정 부분
