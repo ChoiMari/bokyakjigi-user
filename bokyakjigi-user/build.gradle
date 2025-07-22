@@ -130,3 +130,8 @@ bootJar {
 	// 실행 시 진입점이 되는 클래스 (main() 함수 위치)
 	mainClass = 'com.yakgurt.bokyakjigi.user.BokyakjigiUserApplication'
 }
+
+// 어느 줄에서 deprecated API(곧 사라질 예정)를 썼는지 정확히 알려주는 옵션이라고 해서 추가함
+tasks.withType(JavaCompile) {
+	options.compilerArgs << "-Xlint:deprecation"
+}
