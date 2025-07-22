@@ -34,11 +34,14 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults()) //cors 활성화, 기본제공하는 CORS설정 그대로 사용
                 .csrf(csrf -> csrf.disable()) // CSRF 방어 비활성화
                 .authorizeHttpRequests(auth -> auth // 인증/인가 규칙 설정 부분
-                        .requestMatchers("/", "/error", "/favicon.ico", "/css/**", "/js/**", "/images/**").permitAll()  // 해당 요청 url은 인증 없이 모두 접근 가능
-                        .anyRequest().authenticated() ); // 나머지 모든 요청은 로그인(인증 필요)
+                        .requestMatchers("/api/public/**", "/api/auth/**", "/health", "/docs/**").permitAll()  // 인증 필요 여부, 해당 url은 인증이 필요없음(인증 필요 없는 공개 API)
+                        .anyRequest().authenticated() ); // 나머지 모든 요청은 인증이 필요하다(로그인해야 볼수있다), JWT없으면 시큐리티가 요청 가로채고 401에러 응답 -> 리액트에서 /sign-in 페이지로 유도
 
         return http.build(); // 설정이 완료된 HttpSecurity 객체의 빌드메서드 리턴값 반환(필터체인 빌드 후 반환)
-    }
+    } /*
+     SPA에서는 Spring Security가 인증이 필요한 요청에 대해서 가로채기하면서 로그인 페이지 렌더링을 하는걸 하지 않고 그냥 요청을 허용하거나 차단 하는 역할만 함
+     TODO :  hasRole()같은 role기반 인가 처리 추가하기
+    */
 
     @Bean 
     public CorsConfigurationSource corsConfigurationSource() { // 리액트 연동 시 필요함. 리액트와 스프링부트가 도메인이 달라서 브라우저가 보안상 막는게 있는데 리엑트 서버 주소는 괜찮다고 하는 설정이 필요함
