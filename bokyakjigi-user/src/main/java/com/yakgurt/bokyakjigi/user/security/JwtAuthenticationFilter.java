@@ -77,22 +77,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (token != null && jwtProvider.validateToken(token)) { // 토큰이 존재하고 유효한 경우-> 사용자 인증 처리
                     // 토큰에서 사용자 정보(역직렬화한 MemberVO 객체)를 추출(JWT 페이로드의 "user"클레임즈)
-                    MemberVO member = jwtProvider.getUserFromToken(token);
-
-                    // 단일 권한 문자열(MemberVO객체에서 뽑음)
-                    String role = member.getRole().name();
-
-                    // 권한 객체 리스트 생성
-                    List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role));
+                    MemberVO memberVO = jwtProvider.getUserFromToken(token);
+                    SecurityUser member = new SecurityUser(memberVO);
 
                     // 인증 객체 생성
                     UsernamePasswordAuthenticationToken auth =
                             new UsernamePasswordAuthenticationToken(member, // 로그인한 사용자 객체(MemberVO)
                                     null, //JWT 인증할 땐 비밀번호 필요없음
-                                    authorities); // 사용자 권한 리스트
+                                    member.getAuthorities()); // 사용자 권한 리스트
                     // 시큐리티 컨텍스트에 인증 객체 저장 -> 이후 컨트롤러에서 @AuthenticationPrincipal 등 사용 가능
                     SecurityContextHolder.getContext().setAuthentication(auth);
-                    log.debug("[JWT 필터 인증 성공]  사용자: {}, URI: {}", member.getEmail(), request.getRequestURI());
+                    log.debug("[JWT 필터 인증 성공]  사용자: {}, URI: {}", memberVO.getEmail(), request.getRequestURI());
 
                 }
 
