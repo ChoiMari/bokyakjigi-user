@@ -3,6 +3,9 @@ package com.yakgurt.bokyakjigi.user.security;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yakgurt.bokyakjigi.user.config.jwt.JwtProperties;
+import com.yakgurt.bokyakjigi.user.exception.InvalidTokenException;
+import com.yakgurt.bokyakjigi.user.exception.MissingUserClaimException;
+import com.yakgurt.bokyakjigi.user.exception.TokenExpiredException;
 import com.yakgurt.bokyakjigi.user.vo.MemberVO;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -82,7 +85,9 @@ public class JwtProvider {
             // 클레임즈에서 user 클래임 추출
             Object userObj = claims.get("user"); //JWT 페이로드에서 "user"키에 담긴 값을 꺼냄
             if (userObj == null) {
-                throw new IllegalArgumentException("토큰에 사용자 정보가 없습니다.");
+                // 사용자 정보가 누락된 경우 커스텀 예외로 던짐
+                throw new MissingUserClaimException("토큰에 사용자 정보가 존재하지 않습니다.");
+                // 변경 전 : throw new IllegalArgumentException("토큰에 사용자 정보가 없습니다.");
             }
             // Object -> JSON 문자열 변환
             String userJson = objectMapper.writeValueAsString(userObj);
@@ -93,9 +98,15 @@ public class JwtProvider {
             return memberVO;
 
         } catch(ExpiredJwtException e) { //TODO : 던진 예외 처리하는 로직 추가
-            throw new IllegalArgumentException("만료된 토큰입니다.", e);
+            throw new TokenExpiredException("만료된 토큰입니다.", e); // 토큰이 만료된 경우
+            // 변경 전 : throw new IllegalArgumentException("만료된 토큰입니다.", e);
         } catch(JwtException | IllegalArgumentException e){
-            throw new IllegalArgumentException("유효하지 않은 토큰입니다.", e);
+            // JWT 구조가 깨졌거나 시그니처가 위조되었거나 등
+            throw new InvalidTokenException("유효하지 않은 토큰입니다.", e);
+            // 변경 전 : throw new IllegalArgumentException("유효하지 않은 토큰입니다.", e);
+        } catch (JsonProcessingException e) {
+            // JSON 직렬화/역직렬화 중 에러
+            throw new InvalidTokenException("사용자 정보를 파싱하는 도중 에러가 발생했습니다.", e);
         }
 
     }
