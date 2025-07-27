@@ -1,17 +1,17 @@
 package com.yakgurt.bokyakjigi.user.security;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yakgurt.bokyakjigi.user.config.jwt.JwtProperties;
 import com.yakgurt.bokyakjigi.user.vo.MemberVO;
-import io.jsonwebtoken.Header;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.time.Duration;
 import java.util.Date;
 import java.util.Map;
@@ -26,7 +26,8 @@ import java.util.Map;
 public class JwtProvider {
 
     private final JwtProperties jwtProperties;
-    private Key secretKey; // JWT 서명(암호화)에 사용할 비밀 키 객체
+    private SecretKey secretKey; // JWT 서명(암호화)에 사용할 비밀 키 객체
+    private final ObjectMapper objectMapper; // JSON 파싱용(json과 java객체 간 변환을 담당하는 클래스)
 
     /**
      * @PostConstruct 스프링 빈이 생성되고 의존성 주입이 완료된 직후에 자동으로 실행되는 메서드에 붙이는 어노테이션(초기화 작업 수행)
@@ -51,17 +52,53 @@ public class JwtProvider {
         Date expiryDate = new Date(now.getTime() + expiredAt.toMillis());
 
         return Jwts.builder()
-                .setHeaderParam(Header.TYPE, Header.JWT_TYPE)
+                .setHeaderParam(Header.TYPE, Header.JWT_TYPE) // JWT 헤더에 타입 명시
                 .setIssuer(jwtProperties.getIssuer()) // 토큰 발급자
                 .setIssuedAt(now) // 토큰 발급 시간
                 .setExpiration(expiryDate) // 토큰 만료시간
                 .setSubject(memberVO.getEmail()) // 사용자 식별자(사용자 로그인 id)
                 .setClaims(Map.of("user", memberVO))  // 페이로드(클레임즈)설정. user라는 키로 memberVO 전체를 담음
-                .signWith(secretKey, SignatureAlgorithm.HS256) // 시그니처 설정(위변조 방지 위해  HMAC-SHA256으로 암호화)
+                .signWith(secretKey, SignatureAlgorithm.HS256) // 서명용 비밀키 및 알고리즘 설정,시그니처 설정(위변조 방지 위해  HMAC-SHA256으로 암호화)
                 .compact(); // 최종적으로 JWT 문자열 생성해서 리턴
     }
 
 
+    /**
+     *JWT 토큰에서 페이로드 부분을 파싱, 사용자 정보(claims)를 가져오는 메서드
+     * @param token HttpRequest Header로 전달된 파싱할 JWT 토큰 문자열
+     * @return MemberVO 객체(로그인한 사용자 정보)
+     * @throws JsonProcessingException JSON 변환 과정에서 예외 발생 가능
+     * @throws IllegalArgumentException 토큰이 유효하지 않거나 만료 시 발생
+     */
+    public MemberVO getUserFromToken(String token) throws JsonProcessingException {
+        try{
+            // JWT 토큰에서 claims(페이로드) 추출
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)            // 서명 키 설정
+                    .build()                          // JwtParser 생성
+                    .parseSignedClaims(token)         // 토큰 파싱 + 서명 검증(검증 실패시 예외 발생)
+                    .getPayload();                    // Claims(페이로드) 반환
+
+            // 클레임즈에서 user 클래임 추출
+            Object userObj = claims.get("user"); //JWT 페이로드에서 "user"키에 담긴 값을 꺼냄
+            if (userObj == null) {
+                throw new IllegalArgumentException("토큰에 사용자 정보가 없습니다.");
+            }
+            // Object -> JSON 문자열 변환
+            String userJson = objectMapper.writeValueAsString(userObj);
+
+            // JSON 문자열 -> MemberVO 변환
+            MemberVO memberVO = objectMapper.readValue(userJson, MemberVO.class);
+
+            return memberVO;
+
+        } catch(ExpiredJwtException e) { //TODO : 던진 예외 처리하는 로직 추가
+            throw new IllegalArgumentException("만료된 토큰입니다.", e);
+        } catch(JwtException | IllegalArgumentException e){
+            throw new IllegalArgumentException("유효하지 않은 토큰입니다.", e);
+        }
+
+    }
 
 
 }
