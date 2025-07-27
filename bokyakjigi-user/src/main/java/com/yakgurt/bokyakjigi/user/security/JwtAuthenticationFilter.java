@@ -26,6 +26,10 @@ import jakarta.servlet.http.HttpServletResponse;
  * JWT 토큰이 유효하면 인증 객체를 스프링 시큐리티 컨텍스트에 저장
  * 토큰 검증 실패 시 예외를 던지지 않고 다음 필터로 넘겨서 
  * 전역 예외 처리 클래스(또는 스프링 시큐리티)에 위임
+ *
+ * (처음 로그인 시)토큰 없으면 인증처리 무시하고 다음 필터 진행
+ * → 인증 필요한 요청에서 JWT 없으면 Spring Security가 401 처리(/api/auth/login 같은 URL은 인증 없이 접근 허용 상태해놔서 401에러 없음, 걱정 안해도 된다)
+ * → 로그인 시에는 JWT 없어도 인증 없이 요청이 허용
  */
 @RequiredArgsConstructor
 @Slf4j
@@ -74,7 +78,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if(servletPath.startsWith("/api/")) {
                 // Authorization 헤더에서 "Bearer "을 제거한 토큰 추출(형식이 잘못 되었음 null 리턴 받음)
                 String token = resolveToken(request);
-
+                // 토큰 없으면(처음로그인 시) 실행되지 않고 여기서 그냥 넘어가고 다음 필터로 전달
                 if (token != null && jwtProvider.validateToken(token)) { // 토큰이 존재하고 유효한 경우-> 사용자 인증 처리
                     // 토큰에서 사용자 정보(역직렬화한 MemberVO 객체)를 추출(JWT 페이로드의 "user"클레임즈)
                     MemberVO memberVO = jwtProvider.getUserFromToken(token);
