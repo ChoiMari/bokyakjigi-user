@@ -54,7 +54,7 @@ public class SecurityConfig {
         return http.build(); // 설정이 완료된 HttpSecurity 객체의 빌드메서드 리턴값 반환(필터체인 빌드 후 반환)
     } /*
      SPA에서는 Spring Security가 인증이 필요한 요청에 대해서 가로채기하면서 로그인 페이지 렌더링을 하는걸 하지 않고 그냥 요청을 허용하거나 차단 하는 역할만 함
-     TODO :  hasRole()같은 role기반 인가 처리 추가하기
+     TODO :  hasRole()같은 role기반 인가 처리 추가하기(현재는 관리자 페이지 구현 예정이 없어서 설정 안함)
     */
 
     @Bean 
