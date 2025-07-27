@@ -127,5 +127,27 @@ public class JwtProvider {
 
     }
 
+    /**
+     * 주어진 JWT 토큰이 유효한지 검증하는 메서드
+     * 토큰 유효성만 빠르게 확인하려고 만듬
+     *
+     * @param token 클라이언트로부터 받은 JWT 토큰 문자열
+     * @return 유효한 경우 true, 그렇지 않으면 false
+     */
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token); // 파싱 + 서명 검증 + 만료 검증
+
+            return true;
+
+        } catch (JwtException | IllegalArgumentException e) {
+            // 유효하지 않은 토큰 → false 반환
+            return false;
+        }
+    }
+
 
 }
