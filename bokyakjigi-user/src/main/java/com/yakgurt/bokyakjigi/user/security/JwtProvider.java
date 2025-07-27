@@ -67,16 +67,17 @@ public class JwtProvider {
 
 
     /**
-     *JWT 토큰에서 페이로드 부분을 파싱, 사용자 정보(claims)를 가져오는 메서드
-     * @param token HttpRequest Header로 전달된 파싱할 JWT 토큰 문자열
-     * @return MemberVO 객체(로그인한 사용자 정보)
-     * @throws JsonProcessingException JSON 변환 과정에서 예외 발생 가능
-     * @throws IllegalArgumentException 토큰이 유효하지 않거나 만료 시 발생
+     * JWT 토큰에서 페이로드(claims)를 추출하고, 사용자 정보(claims)를 MemberVO 객체로 변환해서 반환하는 메서드
+     * @param token HttpRequest Header로 전달된 파싱할 JWT 토큰 문자열 (token 클라이언트로부터 전달된 JWT 문자열 (Authorization 헤더 등에서 추출됨))
+     * @return MemberVO (로그인한 사용자 정보가 담긴 객체)
+     * @throws InvalidTokenException 토큰이 비정상적이거나 파싱 실패한 경우 발생
+     * @throws TokenExpiredException 토큰이 만료된 경우 발생
+     * @throws MissingUserClaimException 사용자 정보(user 클레임)이 존재하지 않을 경우 발생
      */
-    public MemberVO getUserFromToken(String token) throws JsonProcessingException {
+    public MemberVO getUserFromToken(String token) {
         try{
             // JWT 토큰에서 claims(페이로드) 추출
-            Claims claims = Jwts.parser()
+            Claims claims = Jwts.parser()             // 파서 생성
                     .verifyWith(secretKey)            // 서명 키 설정
                     .build()                          // JwtParser 생성
                     .parseSignedClaims(token)         // 토큰 파싱 + 서명 검증(검증 실패시 예외 발생)
@@ -92,21 +93,36 @@ public class JwtProvider {
             // Object -> JSON 문자열 변환
             String userJson = objectMapper.writeValueAsString(userObj);
 
-            // JSON 문자열 -> MemberVO 변환
+            // JSON 문자열 -> MemberVO 변환(역직렬화)
             MemberVO memberVO = objectMapper.readValue(userJson, MemberVO.class);
 
             return memberVO;
 
-        } catch(ExpiredJwtException e) { //TODO : 던진 예외 처리하는 로직 추가
-            throw new TokenExpiredException("만료된 토큰입니다.", e); // 토큰이 만료된 경우
-            // 변경 전 : throw new IllegalArgumentException("만료된 토큰입니다.", e);
-        } catch(JwtException | IllegalArgumentException e){
-            // JWT 구조가 깨졌거나 시그니처가 위조되었거나 등
-            throw new InvalidTokenException("유효하지 않은 토큰입니다.", e);
-            // 변경 전 : throw new IllegalArgumentException("유효하지 않은 토큰입니다.", e);
         } catch (JsonProcessingException e) {
             // JSON 직렬화/역직렬화 중 에러
             throw new InvalidTokenException("사용자 정보를 파싱하는 도중 에러가 발생했습니다.", e);
+        } catch(ExpiredJwtException e) { // 던진 예외 처리하는 로직 : 커스텀 예외 클래스 -> 전역예외처리클래스(@RestControllerAdvice)
+            throw new TokenExpiredException("만료된 토큰입니다.", e); // 토큰이 만료된 경우
+            // 변경 전 : throw new IllegalArgumentException("만료된 토큰입니다.", e);
+        } catch (UnsupportedJwtException e) {
+            // 지원되지 않는 JWT 형식
+            throw new InvalidTokenException("지원되지 않는 JWT 형식입니다.", e);
+        } catch (MalformedJwtException e) {
+            // 잘못 구성된 JWT (예: 구문 오류, 구분자 부족 등)
+            throw new InvalidTokenException("손상된 JWT 토큰입니다.", e);
+        } catch (SecurityException e) {
+            // 서명 검증 실패
+            throw new InvalidTokenException("JWT 서명 검증에 실패했습니다.", e);
+        } catch (ClassCastException e) {
+            // 클레임 타입이 기대한 구조가 아님
+            throw new InvalidTokenException("JWT 클레임 구조가 잘못되었습니다.", e);
+        }  catch(JwtException | IllegalArgumentException e){
+            // JWT 구조가 깨졌거나 시그니처가 위조되었거나 등
+            throw new InvalidTokenException("유효하지 않은 토큰입니다.", e);
+            // 변경 전 : throw new IllegalArgumentException("유효하지 않은 토큰입니다.", e);
+        } catch (Exception e) {
+            // 기타 예상하지 못한 모든 예외 처리
+            throw new InvalidTokenException("토큰 처리 중 예기치 못한 오류가 발생했습니다.", e);
         }
 
     }
