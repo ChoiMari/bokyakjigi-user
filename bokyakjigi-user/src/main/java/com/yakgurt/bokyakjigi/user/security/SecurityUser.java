@@ -35,6 +35,21 @@ import java.util.List;
  * JWT 토큰 클레임에 담긴 최소한의 사용자 정보만 보유하는 SecurityUser
  * UserDetails 구현체
  * DB 조회 없이 토큰 정보만으로 인증/인가 처리 목적
+ *
+ * 용도 : JWT 토큰 안에 담긴 사용자 최소 정보로 스프링 시큐리티가 인증/인가를 처리하게 해주는 UserDetails 구현체
+ * JWT 토큰에서 꺼낸 사용자 정보(ID, 이메일, 역할 등)를 UserDetails 형식으로 포장해서
+ * 스프링 시큐리티 내부에서 인증(Authentication) 객체를 만들 때 쓰는 DTO 역할(Jwt필터에서 시큐리티 컨택스트에 저장함)
+ *
+ * JWT 토큰 복호화해서 나온 사용자 정보로 MemberVO객체로 역직렬화
+ * -> SecurityUser 객체로 만듬
+ *SecurityUser는 UserDetails 인터페이스를 구현해서 시큐리티가 이해할 수 있는 사용자 정보 형태
+ * 그걸 인증 토큰(UsernamePasswordAuthenticationToken)에 넣어 시큐리티 컨텍스트에 저장
+ * 이걸로 권한 검사, 로그인 사용자 정보 조회, @AuthenticationPrincipal 등 모든 시큐리티 기능 작동
+ *
+ * 사용 목적
+ * JWT는 상태 비저장(stateless) 인증이라 DB 조회 없이 토큰만으로 인증 처리하려고 할 때
+ * UserDetails는 시큐리티 표준 사용자 정보 객체라 꼭 구현해야 함
+ * 토큰에서 직접 만든 최소한 정보만 SecurityUser에 넣어 전달하는 구조가 깔끔하고 효율적임
  */
 @RequiredArgsConstructor
 @Getter
