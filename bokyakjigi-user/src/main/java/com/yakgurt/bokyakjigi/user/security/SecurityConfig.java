@@ -21,6 +21,8 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
     //Spring Security 5 버전부터는 비밀번호를 반드시 암호화해서 처리해야 함
     //-> 암호화되지 않은 비밀번호로 로그인 시도하면 예외 발생
@@ -37,6 +39,12 @@ public class SecurityConfig {
             //    )
                 .cors(Customizer.withDefaults()) //cors 활성화, 기본제공하는 CORS설정 그대로 사용
                 .csrf(csrf -> csrf.disable()) // CSRF 방어 비활성화
+                .exceptionHandling(exception -> exception //->  401, 403 상태코드 커스텀 핸들러 등록(json형태로 프런트에 응답 보내야해서 설정)
+                        // 인증 실패(401) 발생 시 실행할 커스텀 핸들러 등록
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        // 권한 부족(403) 발생 시 실행할 커스텀 핸들러 등록
+                        .accessDeniedHandler(customAccessDeniedHandler)
+                )
                 .authorizeHttpRequests(auth -> auth // 인증/인가 규칙 설정 부분
                         .requestMatchers("/api/public/**", "/api/auth/**", "/health", "/docs/**").permitAll()  // 인증 필요 여부, 해당 url은 인증이 필요없음(인증 필요 없는 공개 API), 로그인 안해도 볼수있는 페이지
                         .anyRequest().authenticated() ) // 나머지 모든 요청은 인증이 필요하다(로그인해야 볼수있다), JWT없으면 시큐리티가 요청 가로채고 401에러 응답 -> 리액트에서 /sign-in 페이지로 유도
