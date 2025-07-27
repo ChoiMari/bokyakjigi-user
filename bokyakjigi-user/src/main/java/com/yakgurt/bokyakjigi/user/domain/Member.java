@@ -74,20 +74,89 @@ public class Member implements UserDetails {
 
     // 양방향 연관관계 객체를 만들 때 서로 참조할 수 있도록 추가함
     @OneToOne(mappedBy = "member", cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY, optional = false)  // 1:1 관계로 프로필 이미지 매핑
+            fetch = FetchType.LAZY, optional = false)  // 1:1 관계로 프로필 이미지 매핑 // TODO : LAZY 로딩으로 인해 N+1 문제 발생할 수 있으므로 Fetch 전략 고려
     private ProfileImg profileImg;
 
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Role 객체에서 권한명 꺼내서 SimpleGrantedAuthority 생성 후 리턴
-        return List.of(new SimpleGrantedAuthority(role.getRoleName()));
+        return List.of(new SimpleGrantedAuthority(role.getRoleName().name()));
         // List.of()로 권한을 하나만 가진 리스트로 감싸서 반환
-    }
+    } // TODO - Role 관리 다중 권한 고려(추후 다중 권한 부여가 필요하면 Set<Role> 등으로 변경 필요)
+
 
     @Override
     public String getUsername() {
         return this.email;
     }
+
+    @Override
+    public String getPassword() {
+        return this.password;
+    }
+
+
+    /**
+     * 계정이 만료되지 않았는지 여부 반환
+     * @return true 계정 만료 안됨(사용가능), false 계정 만료(사용 불가)
+     * TODO - 계정 만료 정책 반영 필요(계정 만료일자 컬럼 추가 후 만료 여부 로직 고려)
+     */
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // 현재는 만료 체크하지 않고 무조건 사용 가능으로 처리
+    }
+
+    /**
+     * 계정이 잠기지 않았는지 여부 반환
+     * @return true 계정 안 잠김(사용가능), false 계정 잠김(사용 불가) 
+     */
+    @Override
+    public boolean isAccountNonLocked() {
+        return !"Y".equals(isDeleted); // 계정 탈퇴 여부, isDeleted가 "Y"면 탈퇴한 걸로 처리
+    }
+
+    /**
+     * 비밀번호가 만료되지 않았는지 여부 반환
+     * @return true 비밀번호 만료 안됨(사용 가능), false 비밀번호 만료(사용불가)
+     * TODO - 비밀번호 만료 정책 반영 필요
+     *  - 비밀번호 마지막 변경일 컬럼 추가 후 일정 기간 초과 시 false 반환 로직 구현 필요
+     */
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // 현재는 만료 체크하지 않고 무조건 사용가능 처리 TODO : 추후 90일 이상 변경 된적 없음 비밀번호 변경하라 로직 고려
+    }
+
+    /**
+     * 계정 활성화되어 있는지 여부 반환
+     * @return true 계정 활성화(사용가능) , false 계정 비활성화(사용불가)
+     * TODO - isDeleted 필드 외 상태 여부도 체크
+     *  - 여러 상태(예: 휴면계정, 정지 등) 추가 시 별도 상태 필드(또는 enum 사용) 고려
+     */
+    @Override
+    public boolean isEnabled() {
+        return !"Y".equals(isDeleted);  // isDeleted가 "Y"면 비활성화 처리
+    }
+
+    // 생성일/수정일 자동 저장
+    /**
+     * 엔티티가 처음 저장되기 전에 실행되는 콜백 메서드
+     */
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now(); // DB에 처음 저장할 때 현재 시간 넣기
+        this.updatedAt = LocalDateTime.now(); // 처음 저장 시점과 같게 설정
+        this.isDeleted = "N"; // 삭제 여부는 처음에 'N' (삭제 안 됨)
+    }
+
+    /**
+     * 엔티티가 수정 되기 전에 실행되는 콜백 메서드
+     * 수정일을 현재 시간으로 갱신함
+     */
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now(); // 수정할 때마다 현재 시간으로 업데이트
+    }
+
 
 }
