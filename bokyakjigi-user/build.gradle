@@ -34,6 +34,7 @@ ext {
 	flywayVersion = '11.10.3'
 	querydslVersion = '5.0.0'
 	springdocVersion = '2.1.0'
+	mockitoInlineVersion = '5.2.0'
 }
 
 dependencyManagement {
@@ -94,6 +95,9 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+	//mockito-inline 의존성
+	testImplementation "org.mockito:mockito-inline:${mockitoInlineVersion}"
+
 	// API 문서화
 	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 
@@ -134,4 +138,9 @@ bootJar {
 // 어느 줄에서 deprecated API(곧 사라질 예정)를 썼는지 정확히 알려주는 옵션이라고 해서 추가함
 tasks.withType(JavaCompile) {
 	options.compilerArgs << "-Xlint:deprecation"
+}
+
+test {
+	useJUnitPlatform()
+	jvmArgs "-javaagent:${classpath.find { it.name.contains('byte-buddy-agent') }.absolutePath}"
 }
