@@ -33,6 +33,7 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 @RequiredArgsConstructor
 @Slf4j
+@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
 
