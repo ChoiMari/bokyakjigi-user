@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 @ToString(exclude = "email") // 민감정보 제거
 @EqualsAndHashCode(of = {"id", "email"}) // 특정 필드만 비교
+@AllArgsConstructor
 public class MemberVO implements Serializable {
     private static final long serialVersionUID = 1L; // JWT나 Redis에 이 VO를 저장하거나 전달할 일 있으면 필요함
 
