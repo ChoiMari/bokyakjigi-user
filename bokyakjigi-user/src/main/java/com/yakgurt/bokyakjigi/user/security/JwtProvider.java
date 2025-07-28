@@ -54,15 +54,29 @@ public class JwtProvider {
         // 토큰 만료 시간 계산(현재시간 + expiredAt 밀리초)
         Date expiryDate = new Date(now.getTime() + expiredAt.toMillis());
 
+
         return Jwts.builder()
-                .setHeaderParam(Header.TYPE, Header.JWT_TYPE) // JWT 헤더에 타입 명시
-                .setIssuer(jwtProperties.getIssuer()) // 토큰 발급자
-                .setIssuedAt(now) // 토큰 발급 시간
-                .setExpiration(expiryDate) // 토큰 만료시간
-                .setSubject(memberVO.getEmail()) // 사용자 식별자(사용자 로그인 id)
-                .setClaims(Map.of("user", memberVO))  // 페이로드(클레임즈)설정. user라는 키로 memberVO 전체를 담음
-                .signWith(secretKey, SignatureAlgorithm.HS256) // 서명용 비밀키 및 알고리즘 설정,시그니처 설정(위변조 방지 위해  HMAC-SHA256으로 암호화)
-                .compact(); // 최종적으로 JWT 문자열 생성해서 리턴
+                .header() // ← Deprecated 아님!
+                .add("typ", "JWT")
+                .and()
+                .claims() // ← 여기에 전체 클레임 입력
+                .add("sub", memberVO.getEmail())
+                .add("iss", jwtProperties.getIssuer())
+                .add("iat", now.getTime() / 1000)
+                .add("exp", expiryDate.getTime() / 1000)
+                .add("user", memberVO)
+                .and()
+                .signWith(secretKey)
+                .compact();
+//        return Jwts.builder()
+//                .setHeaderParam(Header.TYPE, Header.JWT_TYPE) // JWT 헤더에 타입 명시
+//                .setIssuer(jwtProperties.getIssuer()) // 토큰 발급자
+//                .setIssuedAt(now) // 토큰 발급 시간
+//                .setExpiration(expiryDate) // 토큰 만료시간
+//                .setSubject(memberVO.getEmail()) // 사용자 식별자(사용자 로그인 id)
+//                .setClaims(Map.of("user", memberVO))  // 페이로드(클레임즈)설정. user라는 키로 memberVO 전체를 담음
+//                .signWith(secretKey, SignatureAlgorithm.HS256) // 서명용 비밀키 및 알고리즘 설정,시그니처 설정(위변조 방지 위해  HMAC-SHA256으로 암호화)
+//                .compact(); // 최종적으로 JWT 문자열 생성해서 리턴
     }
 
 
