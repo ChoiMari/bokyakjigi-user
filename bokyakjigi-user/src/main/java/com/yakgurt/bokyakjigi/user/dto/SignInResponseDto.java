@@ -10,7 +10,14 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public class SignInResponse {
+public class SignInResponseDto {
     private String accessToken;
     private final String tokenType = "Bearer";
 }
+
+/*
+* public SignInResponseDto(String accessToken) {
+    this.accessToken = accessToken;
+    this.tokenType = "Bearer"; // final이니까 고정됨
+}
+* */
