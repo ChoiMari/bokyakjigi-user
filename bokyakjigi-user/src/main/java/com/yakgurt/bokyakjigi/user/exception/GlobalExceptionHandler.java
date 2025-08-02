@@ -1,10 +1,13 @@
 package com.yakgurt.bokyakjigi.user.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -132,6 +135,49 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
+    /**
+     * HttpMediaTypeNotSupportedException 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
+     * 클라이언트가 지원하지 않는(JSON이 아닌) Content-Type으로 요청을 보냈을 경우 발생하는 예외 처리 (예: application/xml 등)
+     * HTTP 상태코드 415 UNSUPPORTED_MEDIA_TYPE 반환
+     * @param ex 예외 객체(HttpMediaTypeNotSupportedException)
+     * @param request HTTP 요청 정보 (URI, 메서드 등)
+     * @return HTTP 응답 객체(상태 코드 415 + 예외메세지) - 보안을 위해서 ex.getMessage() 보내지 않음
+     */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex,
+                                                 HttpServletRequest request) {
+        log.warn("[지원하지 않는 미디어 타입] 요청 URI: {}, Method: {}, 예외 메시지: {}",
+                request.getRequestURI(), request.getMethod(), ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(),
+                "UNSUPPORTED_MEDIA_TYPE",
+                "지원하지 않는 미디어 타입입니다. JSON 형식으로 보내주세요.",
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(response);
+    }
+
+    /**
+     * HttpMessageNotReadableException 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
+     * JSON 파싱 실패 시 발생하는 예외(잘못된 JSON 포맷, 타입 불일치, 누락된 필드 등)
+     * HTTP 상태 코드 400 BAD_REQUEST 반환
+     * @param ex 예외 객체(HttpMessageNotReadableException)
+     * @param request HTTP 요청 정보 (URI, 메서드 등)
+     * @return HTTP 응답 객체(상태 코드 400 + 예외메세지) - 보안을 위해서 ex.getMessage() 보내지 않음
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        log.warn("[잘못된 JSON 형식] 요청 URI: {}, Method: {}, 클라이언트 IP: {}, 예외 메시지: {}",
+                request.getRequestURI(), request.getMethod(), request.getRemoteAddr(), ex.getMessage(), ex);
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "BAD_REQUEST",
+                "잘못된 JSON 형식입니다.",
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
 
     //<--------
 
