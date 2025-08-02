@@ -4,6 +4,11 @@ import com.yakgurt.bokyakjigi.user.dto.SignInRequestDto;
 import com.yakgurt.bokyakjigi.user.dto.SignInResponseDto;
 import com.yakgurt.bokyakjigi.user.security.JwtProvider;
 import com.yakgurt.bokyakjigi.user.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +34,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Authentication", description = "인증 관련 API")
 public class AuthController {
 
     private final AuthService authService;
@@ -47,6 +53,16 @@ public class AuthController {
      * @RequestBody HTTP 요청의 Body에 담긴 JSON 데이터를 자바 객체 DTO로 변환해달라는 의미(클라이언트가 보내는 JSON을 DTO객체로 매핑해줌)
      * 전역예외처리클래스 있어서 try-catch로 안 묶음
      */
+    @Operation( summary = "로그인", description = "이메일과 비밀번호로 로그인하고 JWT 토큰을 발급받는다.", tags = {"Authentication"},
+            responses = {
+            @ApiResponse(responseCode = "200", description = "로그인 성공, JWT 토큰 반환",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = SignInResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청, 유효성 검사 실패",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "인증 실패, 잘못된 이메일 또는 비밀번호",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PostMapping("/signin")
     public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequestDto dto,
                                     BindingResult bindingResult){
