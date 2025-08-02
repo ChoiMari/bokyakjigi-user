@@ -48,7 +48,8 @@ public class SecurityConfig {
                         .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth // 인증/인가 규칙 설정 부분
-                        .requestMatchers("/api/public/**", "/api/auth/**", "/health", "/docs/**").permitAll()  // 인증 필요 여부, 해당 url은 인증이 필요없음(인증 필요 없는 공개 API), 로그인 안해도 볼수있는 페이지
+                        .requestMatchers("/api/public/**", "/api/auth/**", "/health", "/docs/**","/swagger-ui/**", "/swagger-resources/**",
+                                "/swagger-ui.html", "/v3/api-docs/**","/webjars/**").permitAll()  // 인증 필요 여부, 해당 url은 인증이 필요없음(인증 필요 없는 공개 API), 로그인 안해도 볼수있는 페이지
                         .anyRequest().authenticated() ) // 나머지 모든 요청은 인증이 필요하다(로그인해야 볼수있다), JWT없으면 시큐리티가 요청 가로채고 401에러 응답 -> 리액트에서 /sign-in 페이지로 유도
                 //요청이 들어오면 JwtAuthenticationFilter가 가장 먼저 작동 되도록 설정
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // 처음 로그인시에는 JWT 토큰이 없으니, JwtAuthenticationFilter는 토큰 검증 안 하고 그냥 패스(pass)하거나 무시
