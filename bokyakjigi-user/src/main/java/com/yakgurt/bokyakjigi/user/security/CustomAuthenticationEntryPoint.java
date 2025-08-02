@@ -12,6 +12,8 @@ import org.springframework.security.core.AuthenticationException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 /**
  * AuthenticationEntryPoint 인터페이스를 구현.
@@ -60,7 +62,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 HttpStatus.UNAUTHORIZED.value(), // 상태코드
                 "UNAUTHORIZED", // 상태 타입
                 "인증되지 않은 요청입니다.",
-                LocalDateTime.now() // 예외 발생 시각
+                ZonedDateTime.now(ZoneOffset.UTC) // 예외 발생 시각
         );
 
         // ObjectMapper 객체 생성

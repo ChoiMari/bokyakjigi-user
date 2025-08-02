@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 /**
  * 스프링 시큐리티 403 Forbidden 처리용 커스텀(AccessDeniedHandler를 implements)
@@ -44,7 +46,7 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
                 HttpStatus.FORBIDDEN.value(),
                 "FORBIDDEN",
                 "접근 권한이 없습니다.",
-                LocalDateTime.now()
+                ZonedDateTime.now(ZoneOffset.UTC)
         );
 
         // Jackson ObjectMapper를 사용해 ErrorResponse를 JSON 문자열로 직렬화
