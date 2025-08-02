@@ -3,10 +3,14 @@ package com.yakgurt.bokyakjigi.user.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 /**
  * 전역적으로 예외를 처리해주는 클래스
@@ -33,7 +37,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNAUTHORIZED.value(), // 상태코드
                 "UNAUTHORIZED", // 상태 타입 // TODO : 추후 enum으로 뽑으면 깔끔함
                 ex.getMessage(), // 예외 메세지
-                LocalDateTime.now() // 예외 발생 시각
+                ZonedDateTime.now(ZoneOffset.UTC) // 예외 발생 시각
         );
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
@@ -56,7 +60,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNAUTHORIZED.value(), // 상태 코드
                 "UNAUTHORIZED", // 상태 타입
                 ex.getMessage(), // 예외 메세지
-                LocalDateTime.now() // 예외 발생 시각
+                ZonedDateTime.now(ZoneOffset.UTC) // 예외 발생 시각
         );
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
        /* return ResponseEntity
@@ -78,7 +82,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 "BAD_REQUEST",
                 ex.getMessage(),
-                LocalDateTime.now()
+                ZonedDateTime.now(ZoneOffset.UTC)
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 
@@ -88,6 +92,50 @@ public class GlobalExceptionHandler {
     }
     //<---
 
+    //------> signIn 메서드에서 발생하는 예외 처리
+
+    /**
+     * UsernameNotFoundException예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
+     * 사용자가 시도한 로그인 정보(email)이 일치 하지 않을 때, 그리고 이미 탈퇴한 회원인 경우 발생하는 예외 처리
+     * HTTP 상태코드 401 UNAUTHORIZED 반환(인증실패), 아이디/비밀번호 틀림
+     * @param ex 예외 객체(UsernameNotFoundException)
+     * @return HTTP 응답 객체(상태 코드 401 + 예외메세지) - 보안을 위해서 ex.getMessage() 보내지 않음
+     */
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex){
+        log.warn("[Sign-in] 로그인 사용자 정보 없음 예외 발생 : {}",ex.getMessage(),ex);
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                "UNAUTHORIZED",
+                "아이디 또는 비밀번호가 올바르지 않습니다.",
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
+    /**
+     * BadCredentialsException 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
+     * 사용자가 시도한 로그인 정보(password)가 일치 하지 않을 때 발생하는 예외 처리
+     * HTTP 상태코드 401 UNAUTHORIZED 반환(인증실패), 아이디/비밀번호 틀림
+     * @param ex 예외 객체(BadCredentialsException)
+     * @return HTTP 응답 객체(상태 코드 401 + 예외메세지) - 보안을 위해서 ex.getMessage() 보내지 않음
+     */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex){
+        log.warn("[Sign-in] 로그인 사용자의 비밀번호 불일치 예외 발생 : {}", ex.getMessage(),ex);
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                "UNAUTHORIZED",
+                "아이디 또는 비밀번호가 올바르지 않습니다.",
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
+
+    //<--------
+
+
     /**
      * Exception 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
      * 기타 모든 예외 처리 메서드
@@ -95,7 +143,7 @@ public class GlobalExceptionHandler {
      * 에러 로그(error)로 남겨 문제 원인 추적 가능하게 함
      *
      * @param ex 예외 객체(Exception)
-     * @return HTTP 응답 객체(상태 코드 500 + 예외 메세지)
+     * @return HTTP 응답 객체(상태 코드 500 + 예외 메세지) - 보안을 위해서 ex.getMessage() 보내지 않음
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAllException(Exception ex) {
@@ -104,7 +152,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "INTERNAL_SERVER_ERROR",
                 "서버 내부 오류가 발생했습니다. 관리자에게 문의하세요.",
-                LocalDateTime.now()
+                ZonedDateTime.now(ZoneOffset.UTC)
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
