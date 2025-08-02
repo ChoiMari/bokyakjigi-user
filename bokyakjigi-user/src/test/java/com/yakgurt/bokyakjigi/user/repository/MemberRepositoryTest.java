@@ -42,6 +42,9 @@ public class MemberRepositoryTest {
     public void findByEmail(){
         Member test2 = memberRepo.findByEmail("test@example.com").get();
         log.info("{},{}",test2,test2.getRole());
+        String rawPassword = "c12345678#";
+        String encodedPassword = passwordEncoder.encode(rawPassword);
+        System.out.println("바밀번호 암호화: " + encodedPassword);
     }
 
 

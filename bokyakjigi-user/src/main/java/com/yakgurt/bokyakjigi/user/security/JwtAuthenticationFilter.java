@@ -49,7 +49,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
        String bearerToken = request.getHeader("Authorization");  // Authorization 헤더에서 값 꺼냄
 
         // "Bearer "로 시작하는 토큰인지 확인(JWT인증 방식인지)
-        if(bearerToken != null & bearerToken.startsWith("Bearer ")){
+        if(bearerToken != null && bearerToken.startsWith("Bearer ")){
             // 앞의 "Bearer " 7글자를 제외한 나머지 토큰만 잘라서 리턴
             return bearerToken.substring(7);
         }
