@@ -35,13 +35,14 @@ public class AuthService {
      * @return 유효한 JWT 액세스 토큰 문자열
      * @throws UsernameNotFoundException 회원이 존재하지 않을 경우
      * @throws BadCredentialsException 비밀번호 불일치 시
-     * TODO : 전역 예외 처리 클래스에서 json형태로 보내야함
+     * 전역 예외 처리 클래스에서 json형태로 보내야함 -> 작업완료
      */
     @Transactional(readOnly = true)  // 읽기 전용 트랜잭션 (성능 최적화용)
     public String signIn(String email, String rawPassword) {
         // 이메일과 탈퇴 여부 'N'로 활성 회원 조회
-        Member member = memberRepository.findByEmailAndIsDeleted(email, "N")
+        Member member = memberRepository.findByEmailAndIsDeleted(email, "N") //email이 일치하고, isDeleted가 N인 MEMBER객체를 찾음
                 .orElseThrow(() -> new UsernameNotFoundException("가입된 회원이 없습니다."));
+        //해당 값이 없을 경우 UsernameNotFoundException예외 발생
 
         // 비밀번호 검증
         if (!pwdEncoder.matches(rawPassword, member.getPassword())) {
