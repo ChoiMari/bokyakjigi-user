@@ -39,6 +39,7 @@ public class AuthService {
      */
     @Transactional(readOnly = true)  // 읽기 전용 트랜잭션 (성능 최적화용)
     public String signIn(String email, String rawPassword) {
+        log.info("signIn start (email={})",email);
         // 이메일과 탈퇴 여부 'N'로 활성 회원 조회
         Member member = memberRepository.findByEmailAndIsDeleted(email, "N") //email이 일치하고, isDeleted가 N인 MEMBER객체를 찾음
                 .orElseThrow(() -> new UsernameNotFoundException("가입된 회원이 없습니다."));
@@ -54,7 +55,7 @@ public class AuthService {
         Duration tokenValidity = Duration.ofMinutes(jwtProperties.getAccessTokenExpirationMinutes()); // 토큰 만료시간
 
         String token = jwtProvider.generateAccessToken(tokenValidity, memberVO);
-
+        log.info("signIn success - email={}", email);
         return token;
     }
 }
