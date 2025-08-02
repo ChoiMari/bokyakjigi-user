@@ -103,7 +103,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex){
-        log.warn("[Sign-in] 로그인 사용자 정보 없음 예외 발생 : {}",ex.getMessage(),ex);
+        log.warn("[Sign-in] 로그인 사용자 정보 없음(사용자 조회 실패) 예외 발생 : {}",ex.getMessage(),ex);
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.UNAUTHORIZED.value(),
                 "UNAUTHORIZED",
