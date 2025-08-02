@@ -33,7 +33,7 @@ public class MemberRepositoryTest {
     //@Test
     //@Transactional 붙어야 연관된 role 엔티티도 지연로딩 가능.
     public void findById(){
-        Member test1 = memberRepo.findById(1).get(); //-> 값이 있으면 값을 리턴, 없으면 예외 던짐
+        Member test1 = memberRepo.findById(1L).get(); //-> 값이 있으면 값을 리턴, 없으면 예외 던짐
         log.info("{},{}",test1,test1.getRole());
     }
 
