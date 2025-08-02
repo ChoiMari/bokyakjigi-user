@@ -1,9 +1,7 @@
 package com.yakgurt.bokyakjigi.user.dto;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 /**
@@ -22,6 +20,9 @@ public class SignInRequestDto {
             message = "유효한 이메일 주소를 입력해주세요."
     )
     @Size(max = 200, message = "이메일은 200자 이내여야 합니다.")
+    @Schema(description = "사용자 이메일", example = "user@example.com") //Swagger에서 API 문서에 보여줄 데이터 구조 설명하는 애너테이션
+    //설명(description), 예시(example) 명시 //필수 여부(required)는  @NotNull로 사용, @Schema(required=true)는 deprecated(사용 중단 권고) 상태
+    @NotNull
     private String email;
 
     // 비밀번호 유효성 검증 에너테이션
@@ -29,5 +30,7 @@ public class SignInRequestDto {
     @Size(min = 8, message = "비밀번호는 8자 이상이어야 합니다.") // 길이가 8자 이상이어야 함. (최대 길이는 Pattern에서 제한)
     @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,16}$",
             message = "비밀번호는 8~16자, 영문+숫자+특수문자를 포함해야 합니다.")
+    @Schema(description = "비밀번호", example = "password123@")
+    @NotNull
     private String password;
 }
