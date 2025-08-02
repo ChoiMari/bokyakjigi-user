@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- 콘솔에 로그 찍는 앱렌더 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <charset>UTF-8</charset> <!-- 한글 깨짐 방지 필수 -->
+            <pattern>%green(%d{HH:mm:ss.SSS}) %blue(%-5level) %red([%thread]) %yellow(%logger{36}(%file:%line) - %msg%n)</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 루트 로거 설정: DEBUG 레벨 이상 모두 콘솔에 출력 -->
+    <root level="info">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

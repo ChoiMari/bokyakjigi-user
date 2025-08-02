@@ -1,13 +1,16 @@
-package com.yakgurt.bokyakjigi.user.config;
+package com.yakgurt.bokyakjigi.user.security;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.savedrequest.SavedRequest;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -16,7 +19,12 @@ import java.util.List;
 
 @Configuration //->스프링 컨테이너에서 생성하고 관리하는 설정용 컴포넌트 라는 뜻.
 @EnableMethodSecurity //-> 각각의 컨트롤러 메서드에서 인증(로그인), 권한 설정을 하기 위해서 사용하는 애너테이션, 컨트롤러 메서드별 권한 제어(@PreAuthorize 등)를 활성화
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
     //Spring Security 5 버전부터는 비밀번호를 반드시 암호화해서 처리해야 함
     //-> 암호화되지 않은 비밀번호로 로그인 시도하면 예외 발생
@@ -33,14 +41,23 @@ public class SecurityConfig {
             //    )
                 .cors(Customizer.withDefaults()) //cors 활성화, 기본제공하는 CORS설정 그대로 사용
                 .csrf(csrf -> csrf.disable()) // CSRF 방어 비활성화
+                .exceptionHandling(exception -> exception //->  401, 403 상태코드 커스텀 핸들러 등록(json형태로 프런트에 응답 보내야해서 설정)
+                        // 인증 실패(401) 발생 시 실행할 커스텀 핸들러 등록
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        // 권한 부족(403) 발생 시 실행할 커스텀 핸들러 등록
+                        .accessDeniedHandler(customAccessDeniedHandler)
+                )
                 .authorizeHttpRequests(auth -> auth // 인증/인가 규칙 설정 부분
-                        .requestMatchers("/api/public/**", "/api/auth/**", "/health", "/docs/**").permitAll()  // 인증 필요 여부, 해당 url은 인증이 필요없음(인증 필요 없는 공개 API)
-                        .anyRequest().authenticated() ); // 나머지 모든 요청은 인증이 필요하다(로그인해야 볼수있다), JWT없으면 시큐리티가 요청 가로채고 401에러 응답 -> 리액트에서 /sign-in 페이지로 유도
+                        .requestMatchers("/api/public/**", "/api/auth/**", "/health", "/docs/**","/swagger-ui/**", "/swagger-resources/**",
+                                "/swagger-ui.html", "/v3/api-docs/**","/webjars/**").permitAll()  // 인증 필요 여부, 해당 url은 인증이 필요없음(인증 필요 없는 공개 API), 로그인 안해도 볼수있는 페이지
+                        .anyRequest().authenticated() ) // 나머지 모든 요청은 인증이 필요하다(로그인해야 볼수있다), JWT없으면 시큐리티가 요청 가로채고 401에러 응답 -> 리액트에서 /sign-in 페이지로 유도
+                //요청이 들어오면 JwtAuthenticationFilter가 가장 먼저 작동 되도록 설정
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // 처음 로그인시에는 JWT 토큰이 없으니, JwtAuthenticationFilter는 토큰 검증 안 하고 그냥 패스(pass)하거나 무시
 
         return http.build(); // 설정이 완료된 HttpSecurity 객체의 빌드메서드 리턴값 반환(필터체인 빌드 후 반환)
     } /*
      SPA에서는 Spring Security가 인증이 필요한 요청에 대해서 가로채기하면서 로그인 페이지 렌더링을 하는걸 하지 않고 그냥 요청을 허용하거나 차단 하는 역할만 함
-     TODO :  hasRole()같은 role기반 인가 처리 추가하기
+     TODO :  hasRole()같은 role기반 인가 처리 추가하기(현재는 관리자 페이지 구현 예정이 없어서 설정 안함)
     */
 
     @Bean 
@@ -63,4 +80,8 @@ public class SecurityConfig {
         //-> 스프링 컨테이너에 빈으로 등록하여 스프링 시큐리티나 MVC가 이 설정을 사용할 수 있도록 함
     }
 
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
 }
