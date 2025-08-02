@@ -2,6 +2,7 @@ package com.yakgurt.bokyakjigi.user.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yakgurt.bokyakjigi.user.exception.ErrorResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,10 @@ import java.time.ZonedDateTime;
  *  이 클래스의 주요 역할 : 클라이언트(리액트)에 401 상태코드 + 에러메시지 응답(json 형태로)
  */
 @Component
+@RequiredArgsConstructor
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
+
+    private final ObjectMapper objectMapper;
 
     /**
      * 로그인 하지 않은 사용자가 인증이 필요한 API 요청(JWT 인증 필요한 보호된 URL 접근)했을 때, 어떻게 응답할지 정의하는 메서드
@@ -65,6 +69,13 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 ZonedDateTime.now(ZoneOffset.UTC) // 예외 발생 시각
         );
 
+        //CustomAuthenticationEntryPoint 안에서 ObjectMapper를 직접 새로 생성하는 대신, 스프링이 관리하는(주입하는) ObjectMapper를 사용하도록 바꿈
+        String json = objectMapper.writeValueAsString(errorResponse);
+        response.getWriter().write(json);
+
+        /*
+        직접 생성했을 때 문제점:
+        CustomAuthenticationEntryPoint에서 new ObjectMapper() 하면, 스프링이 설정한 모듈들(JavaTimeModule 같은)을 안 가져와서 직렬화 에러가 발생
         // ObjectMapper 객체 생성
         // - Jackson 라이브러리에서 제공하는 직렬화 도구
         // - 자바 객체 → JSON 문자열로 변환할 때 사용
@@ -78,6 +89,8 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         // 직렬화된 JSON 문자열을 응답 본문(response body)에 직접 작성해서 클라이언트에게 보냄
         // - ResponseEntity 사용 불가능한 위치이므로 이렇게 직접 출력 스트림에 작성해야 한다
                 response.getWriter().write(json);
+
+         */
 
     }
 
