@@ -2,14 +2,14 @@ package com.yakgurt.bokyakjigi.user.web;
 
 import com.yakgurt.bokyakjigi.user.common.response.ApiResponse;
 import com.yakgurt.bokyakjigi.user.common.response.StatusCode;
+import com.yakgurt.bokyakjigi.user.dto.SignUpRequestDto;
 import com.yakgurt.bokyakjigi.user.service.SignUpService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -52,6 +52,29 @@ public class SignUpController {
                 "사용 가능한 닉네임 입니다.",
                 true,
                 ZonedDateTime.now(ZoneOffset.UTC)));
+    }
+
+    /**
+     * 회원가입 API
+     * 클라이언트(리액트)에서 전달받은 회원가입 요청 데이터를 받아 회원 가입을 처리
+     * @param dto 회원가입 요청 데이터
+     * @return 가입된 회원의 고유 ID를 응답 data에 포함하여 json형태로 반환 / 회원가입 실패 시에는 예외 처리기에 의해 적절한 에러 응답 반환
+     */
+    @PostMapping("/signup")
+    public ResponseEntity<ApiResponse<Long>> signup(@Valid @RequestBody SignUpRequestDto dto) {
+        log.debug("signup 요청 email(masked)={}, nickname={}", dto.getMaskedEmail(),dto.getNickname());
+
+        Long memberId = signUpSvc.signUp(dto);
+
+        ApiResponse<Long> response = new ApiResponse<>(
+                HttpStatus.CREATED.value(), // 201 Created
+                StatusCode.CREATED.name(),
+                "회원가입 성공",
+                memberId,  // 데이터: 가입한 회원 PK
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+
+        return ResponseEntity.status(StatusCode.CREATED.getHttpStatus()).body(response);
     }
 
 }
