@@ -41,6 +41,7 @@ public class SignUpRequestDto {
     @Pattern(regexp = "^[가-힣a-zA-Z0-9_]+$", message = "닉네임은 한글, 영문, 숫자, _ 만 사용할 수 있습니다.")
     private String nickname;
 
+    // 편의 메서드
     public Member toEntity(String encodedPassword, Role role) {
         return Member.builder()
                 .email(this.email)
@@ -49,4 +50,20 @@ public class SignUpRequestDto {
                 .role(role)
                 .build();
     }
+
+    /**
+     * 전송된 email 보안을 위해서 마스킹처리해서 로그찍음
+     * @return 마스킹 처리된 이메일
+     */
+    public String getMaskedEmail() {
+        if (email == null || !email.contains("@")) return "*****";
+        String[] parts = email.split("@");
+        String local = parts[0];
+        String domain = parts[1];
+        String maskedLocal = local.length() <= 2
+                ? local.charAt(0) + "*"
+                : local.substring(0, 2) + "*".repeat(local.length() - 2);
+        return maskedLocal + "@" + domain;
+    }
+
 }
