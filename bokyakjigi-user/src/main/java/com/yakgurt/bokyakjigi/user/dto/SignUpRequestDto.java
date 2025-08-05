@@ -1,5 +1,7 @@
 package com.yakgurt.bokyakjigi.user.dto;
 
+import com.yakgurt.bokyakjigi.user.domain.Member;
+import com.yakgurt.bokyakjigi.user.domain.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -38,4 +40,13 @@ public class SignUpRequestDto {
     @Size(min = 2, max = 50, message = "닉네임은 2자 이상 50자 이하로 입력해주세요.")
     @Pattern(regexp = "^[가-힣a-zA-Z0-9_]+$", message = "닉네임은 한글, 영문, 숫자, _ 만 사용할 수 있습니다.")
     private String nickname;
+
+    public Member toEntity(String encodedPassword, Role role) {
+        return Member.builder()
+                .email(this.email)
+                .password(encodedPassword)
+                .nickname(this.nickname)
+                .role(role)
+                .build();
+    }
 }
