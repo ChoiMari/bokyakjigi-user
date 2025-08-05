@@ -8,7 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -269,6 +271,34 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(StatusCode.INTERNAL_SERVER_ERROR.getHttpStatus()).body(response);
+    }
+
+
+    /**
+     * MethodArgumentNotValidException 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
+     * 유효성 검사 실패 시 발생하는 MethodArgumentNotValidException 예외를 처리하는 핸들러
+     * DTO에 설정된 @Valid 또는 @Validated 어노테이션을 통해 검증 실패 시 호출됨
+     * @param ex 예외 객체(MethodArgumentNotValidException)
+     * @param request request 클라이언트의 HTTP 요청 객체 (URI, Method 정보 추출용)
+     * @return HTTP 응답 객체(상태 코드 400 + 예외 메세지)
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        log.warn("[유효성 검사 실패] 요청 URI: {}, Method: {}, 예외 메시지: {}",
+                request.getRequestURI(), request.getMethod(), ex.getMessage());
+
+        // 첫 번째 필드 에러 메시지만 전달 (프론트 입장에서 제일 먼저 보여줘야 할 메시지 하나만 추출)
+        FieldError fieldError = ex.getBindingResult().getFieldError();
+        String message = (fieldError != null) ? fieldError.getDefaultMessage() : "잘못된 입력입니다.";
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                StatusCode.BAD_REQUEST.name(),
+                message, // ex.getMessage() 안 쓰는 이유: 보안 + 너무 긴 내용
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     //<---
