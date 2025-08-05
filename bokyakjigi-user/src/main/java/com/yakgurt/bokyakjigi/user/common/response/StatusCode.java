@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 public enum StatusCode {
     // 2xx
     OK(HttpStatus.OK), // 200 요청 성공
+    CREATED(HttpStatus.CREATED),
 
     // 4xx
     BAD_REQUEST(HttpStatus.BAD_REQUEST),// 400 잘못된 요청
