@@ -12,4 +12,16 @@ public interface SignUpService {
      * @return 가입된 회원의 ID(PK)
      */
     Long signUp(SignUpRequestDto dto);
+
+    /**
+     * 이메일 중복 체크
+     * @param email 검사할 이메일
+     */
+    void checkDuplicateEmail(String email);
+
+    /**
+     * 닉네임 중복체크
+     * @param nickname 검사할 닉네임
+     */
+    void checkDuplicateNickname(String nickname);
 }
