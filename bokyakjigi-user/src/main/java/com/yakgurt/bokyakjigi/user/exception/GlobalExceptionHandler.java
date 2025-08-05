@@ -198,20 +198,20 @@ public class GlobalExceptionHandler {
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 StatusCode.INTERNAL_SERVER_ERROR.name(),
-                "서버 내부 오류가 발생했습니다. 관리자에게 문의하세요.",
+                "서버 내부 오류가 발생했습니다. 관리자에게 문의해주세요.",
                 ZonedDateTime.now(ZoneOffset.UTC)
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         /* return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR) // 상태 코드 500
-                .body("서버 내부 오류가 발생했습니다. 관리자에게 문의하세요."); // 보안 때문에 .body(ex.getMessage());를 사용하지 않음
+                .body("서버 내부 오류가 발생했습니다. 관리자에게 문의해주세요."); // 보안 때문에 .body(ex.getMessage());를 사용하지 않음
         // 내부 시스템 정보 노출 방지
          */
     }
 
 
-    //---> SignUp에서 발생하는 예외처리
+    //---> 회원가입 로직에서 발생하는 예외처리
 
     /**
      * DuplicateEmailException(커스텀) 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
@@ -251,5 +251,27 @@ public class GlobalExceptionHandler {
         return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    /**
+     * RoleNotFoundException(커스텀) 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
+     * DB 세팅이 잘못되어 USER 권한을 찾을 수 없음, 서버 내부의 잘못된 상태
+     * @param ex 예외 객체(RoleNotFoundException)
+     * @return HTTP 응답 객체(상태 코드 500 + 예외 메세지) - 보안을 위해서 ex.getMessage() 보내지 않음
+     */
+    @ExceptionHandler(RoleNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRoleNotFound(RoleNotFoundException ex) {
+        log.error("권한을 찾을 수 없는 예외 : {}", ex.getMessage(), ex);
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                StatusCode.INTERNAL_SERVER_ERROR.name(),
+                "서버 내부 오류가 발생했습니다. 관리자에게 문의해주세요.", //-> 보안상 ex.getMessage() 보내지 않음
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+
+        return ResponseEntity.status(StatusCode.INTERNAL_SERVER_ERROR.getHttpStatus()).body(response);
+    }
+
     //<---
+
+
 }
