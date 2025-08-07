@@ -53,15 +53,17 @@ public class Member { //implements UserDetails 안하는 로직으로 변경(->S
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Enumerated(EnumType.STRING) // enum 이름 자체를 문자열로 저장
     @Column(nullable = false, length = 1)
-    private String isDeleted;
+    private IsDeleted isDeleted;
 
     @Column(updatable = false)
     private LocalDateTime deletedAt;
 
+    @Enumerated(EnumType.STRING)
     @Basic(optional = false)
     @Column(nullable = false, length = 20)
-    private String loginType;
+    private LoginType loginType;
 
     @Column(unique = true, length = 300)
     private String snsId;
@@ -70,6 +72,7 @@ public class Member { //implements UserDetails 안하는 로직으로 변경(->S
     @ManyToOne(fetch = FetchType.LAZY) // 다대일 관계 (Member는 Role 하나를 가짐)
     @JoinColumn(name = "ROLE_ID", nullable = false)  // FK 컬럼 이름, nn
     @Basic(optional = false)
+    @Enumerated(EnumType.STRING)
     private Role role;
 
     // 양방향 연관관계 객체를 만들 때 서로 참조할 수 있도록 추가함
@@ -85,7 +88,8 @@ public class Member { //implements UserDetails 안하는 로직으로 변경(->S
     public void prePersist() {
         this.createdAt = LocalDateTime.now(); // DB에 처음 저장할 때 현재 시간 넣기
         this.updatedAt = LocalDateTime.now(); // 처음 저장 시점과 같게 설정
-        this.isDeleted = "N"; // 삭제 여부는 처음에 'N' (삭제 안 됨)
+        this.isDeleted = IsDeleted.N; // 삭제 여부는 처음에 'N' (삭제 안 됨)
+        this.deletedAt = null;
     }
 
     /**
