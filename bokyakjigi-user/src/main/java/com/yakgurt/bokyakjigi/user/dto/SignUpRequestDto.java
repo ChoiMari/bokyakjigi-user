@@ -1,5 +1,7 @@
 package com.yakgurt.bokyakjigi.user.dto;
 
+import com.yakgurt.bokyakjigi.user.domain.IsDeleted;
+import com.yakgurt.bokyakjigi.user.domain.LoginType;
 import com.yakgurt.bokyakjigi.user.domain.Member;
 import com.yakgurt.bokyakjigi.user.domain.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,6 +12,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 /**
  * Sign Up 회원가입 요청 DTO
@@ -41,12 +45,21 @@ public class SignUpRequestDto {
     @Pattern(regexp = "^[가-힣a-zA-Z0-9_]+$", message = "닉네임은 한글, 영문, 숫자, _ 만 사용할 수 있습니다.")
     private String nickname;
 
-    // 편의 메서드
+    /**
+     * DTO → Entity 변환용 편의 메서드(일반 회원가입용)
+      * @param
+     * @return
+     */
     public Member toEntity(String encodedPassword, Role role) {
         return Member.builder()
                 .email(this.email)
                 .password(encodedPassword)
                 .nickname(this.nickname)
+               // .createdAt(LocalDateTime.now())
+               // .updatedAt(LocalDateTime.now())
+              //  .isDeleted(IsDeleted.N) // -> member 도메인 클래스에 @PrePersist 메서드가 있어서 JPA가 엔티티를 DB에 저장하기 전에 자동으로 처리해줘서 명시적으로 세팅할 필요 없음
+                .loginType(LoginType.LOCAL)
+                .snsId(null) // 일반 회원가입은 SNS ID 없음
                 .role(role)
                 .build();
     }
