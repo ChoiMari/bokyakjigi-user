@@ -80,9 +80,10 @@ public class Member { //implements UserDetails 안하는 로직으로 변경(->S
             fetch = FetchType.LAZY, optional = false)  // 1:1 관계로 프로필 이미지 매핑 // TODO : LAZY 로딩으로 인해 N+1 문제 발생할 수 있으므로 Fetch 전략 고려
     private ProfileImg profileImg;
 
-    // 생성일/수정일 자동 저장
+
     /**
      * 엔티티가 처음 저장되기 전에 실행되는 콜백 메서드
+     * 생성일/수정일/탈퇴여부(N)/탈퇴일(null) 자동 저장
      */
     @PrePersist
     public void prePersist() {
