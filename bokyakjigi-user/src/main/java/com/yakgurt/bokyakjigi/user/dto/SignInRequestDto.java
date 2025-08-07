@@ -2,7 +2,9 @@ package com.yakgurt.bokyakjigi.user.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  *로그인 요청 DTO
@@ -10,7 +12,9 @@ import lombok.Data;
  * 이메일과 비밀번호를 받음
  * 입력값 검증용 어노테이션 추가
  */
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 public class SignInRequestDto {
 
     @NotBlank(message = "이메일은 필수 입력값입니다.")
@@ -27,7 +31,7 @@ public class SignInRequestDto {
 
     // 비밀번호 유효성 검증 에너테이션
     @NotBlank(message = "비밀번호는 필수 입력값입니다.") // 비밀번호가 null이거나 빈 문자열("") 또는 공백만 있는 경우
-    @Size(min = 8, message = "비밀번호는 8자 이상이어야 합니다.") // 길이가 8자 이상이어야 함. (최대 길이는 Pattern에서 제한)
+    @Size(min = 8, max = 16,  message = "비밀번호는 8자 이상 16자 이하로 입력해주세요.")
     @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,16}$",
             message = "비밀번호는 8~16자, 영문+숫자+특수문자를 포함해야 합니다.")
     @Schema(description = "비밀번호", example = "password123@")

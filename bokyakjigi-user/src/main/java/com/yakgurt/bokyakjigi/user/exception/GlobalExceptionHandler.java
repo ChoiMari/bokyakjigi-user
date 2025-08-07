@@ -1,5 +1,6 @@
 package com.yakgurt.bokyakjigi.user.exception;
 
+import com.yakgurt.bokyakjigi.user.common.response.StatusCode;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -7,7 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -17,7 +20,7 @@ import java.time.ZonedDateTime;
 
 /**
  * 전역적으로 예외를 처리해주는 클래스
- * TODO : 추후 enum으로 상태 코드와 메세지 관리하는 로직으로 변경하기, 다국어 처리 고려(message에 메시지 코드 넣고 MessageSource로 메시지 resolve)
+ * TODO : 다국어 처리 고려(message에 메시지 코드 넣고 MessageSource로 메시지 resolve)
  */
 @Slf4j
 @RestControllerAdvice // 전역 예외 처리용 어노테이션(@ControllerAdvice + @ResponseBody 역할), 모든 컨트롤러에서 발생하는 예외를 잡아 JSON형태로 응답을 만들어 준다(그래야 프런트에서 파싱이 가능함)
@@ -38,7 +41,7 @@ public class GlobalExceptionHandler {
 
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.UNAUTHORIZED.value(), // 상태코드
-                "UNAUTHORIZED", // 상태 타입 // TODO : 추후 enum으로 뽑으면 깔끔함
+                StatusCode.UNAUTHORIZED.name(), // 상태 타입
                 ex.getMessage(), // 예외 메세지
                 ZonedDateTime.now(ZoneOffset.UTC) // 예외 발생 시각
         );
@@ -61,7 +64,7 @@ public class GlobalExceptionHandler {
         log.warn("[JWT] 유효하지 않은 토큰 예외 발생 : {}", ex.getMessage(),ex);
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.UNAUTHORIZED.value(), // 상태 코드
-                "UNAUTHORIZED", // 상태 타입
+                StatusCode.UNAUTHORIZED.name(), // 상태 타입
                 ex.getMessage(), // 예외 메세지
                 ZonedDateTime.now(ZoneOffset.UTC) // 예외 발생 시각
         );
@@ -83,7 +86,7 @@ public class GlobalExceptionHandler {
         log.warn("[JWT] 사용자 정보 누락 예외 발생 : {}", ex.getMessage(), ex);
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "BAD_REQUEST",
+                StatusCode.BAD_REQUEST.name(),
                 ex.getMessage(),
                 ZonedDateTime.now(ZoneOffset.UTC)
         );
@@ -109,7 +112,7 @@ public class GlobalExceptionHandler {
         log.warn("[Sign-in] 로그인 사용자 정보 없음(사용자 조회 실패) 예외 발생 : {}",ex.getMessage(),ex);
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.UNAUTHORIZED.value(),
-                "UNAUTHORIZED",
+                StatusCode.UNAUTHORIZED.name(),
                 "아이디 또는 비밀번호가 올바르지 않습니다.",
                 ZonedDateTime.now(ZoneOffset.UTC)
         );
@@ -128,7 +131,7 @@ public class GlobalExceptionHandler {
         log.warn("[Sign-in] 로그인 사용자의 비밀번호 불일치 예외 발생 : {}", ex.getMessage(),ex);
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.UNAUTHORIZED.value(),
-                "UNAUTHORIZED",
+                StatusCode.UNAUTHORIZED.name(),
                 "아이디 또는 비밀번호가 올바르지 않습니다.",
                 ZonedDateTime.now(ZoneOffset.UTC)
         );
@@ -150,7 +153,7 @@ public class GlobalExceptionHandler {
                 request.getRequestURI(), request.getMethod(), ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(),
-                "UNSUPPORTED_MEDIA_TYPE",
+                StatusCode.UNSUPPORTED_MEDIA_TYPE.name(),
                 "지원하지 않는 미디어 타입입니다. JSON 형식으로 보내주세요.",
                 ZonedDateTime.now(ZoneOffset.UTC)
         );
@@ -171,7 +174,7 @@ public class GlobalExceptionHandler {
                 request.getRequestURI(), request.getMethod(), request.getRemoteAddr(), ex.getMessage(), ex);
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "BAD_REQUEST",
+                StatusCode.BAD_REQUEST.name(),
                 "잘못된 JSON 형식입니다.",
                 ZonedDateTime.now(ZoneOffset.UTC)
         );
@@ -196,16 +199,109 @@ public class GlobalExceptionHandler {
         log.error("예상치 못한 예외 발생: {}", ex.getMessage(), ex);
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "INTERNAL_SERVER_ERROR",
-                "서버 내부 오류가 발생했습니다. 관리자에게 문의하세요.",
+                StatusCode.INTERNAL_SERVER_ERROR.name(),
+                "서버 내부 오류가 발생했습니다. 관리자에게 문의해주세요.",
                 ZonedDateTime.now(ZoneOffset.UTC)
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         /* return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR) // 상태 코드 500
-                .body("서버 내부 오류가 발생했습니다. 관리자에게 문의하세요."); // 보안 때문에 .body(ex.getMessage());를 사용하지 않음
+                .body("서버 내부 오류가 발생했습니다. 관리자에게 문의해주세요."); // 보안 때문에 .body(ex.getMessage());를 사용하지 않음
         // 내부 시스템 정보 노출 방지
          */
     }
+
+
+    //---> 회원가입 로직에서 발생하는 예외처리
+
+    /**
+     * DuplicateEmailException(커스텀) 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
+     * DB에 중복된 이메일이 있으면 발생하는 예외 처리 메서드
+     * @param ex 예외 객체(DuplicateEmailException)
+     * @return HTTP 응답 객체(상태 코드 400 + 예외 메세지) - - 보안을 위해서 ex.getMessage() 보내지 않음
+     */
+    @ExceptionHandler(DuplicateEmailException.class)
+    public  ResponseEntity<ErrorResponse> handleDuplicateEmail(DuplicateEmailException ex) {
+        log.warn("이메일 중복 예외: {}", ex.getMessage(), ex);
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                StatusCode.BAD_REQUEST.name(),
+                "이미 사용 중인 이메일입니다.", //-> 보안상 ex.getMessage() 보내지 않음
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+
+        return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    /**
+     * DuplicateNicknameException(커스텀) 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
+     * DB에 중복된 이메일이 있으면 발생하는 예외 처리 메서드
+     * @param ex 예외 객체(DuplicateNicknameException)
+     * @return HTTP 응답 객체(상태 코드 400 + 예외 메세지) - - 보안을 위해서 ex.getMessage() 보내지 않음
+     */
+    @ExceptionHandler(DuplicateNicknameException.class)
+    public  ResponseEntity<ErrorResponse> handleDuplicateNickname(DuplicateNicknameException ex) {
+        log.warn("닉네임 중복 예외: {}", ex.getMessage(), ex);
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                StatusCode.BAD_REQUEST.name(),
+                "이미 사용 중인 닉네임입니다.", //-> 보안상 ex.getMessage() 보내지 않음
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+
+        return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    /**
+     * RoleNotFoundException(커스텀) 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
+     * DB 세팅이 잘못되어 USER 권한을 찾을 수 없음, 서버 내부의 잘못된 상태
+     * @param ex 예외 객체(RoleNotFoundException)
+     * @return HTTP 응답 객체(상태 코드 500 + 예외 메세지) - 보안을 위해서 ex.getMessage() 보내지 않음
+     */
+    @ExceptionHandler(RoleNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRoleNotFound(RoleNotFoundException ex) {
+        log.error("권한을 찾을 수 없는 예외 : {}", ex.getMessage(), ex);
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                StatusCode.INTERNAL_SERVER_ERROR.name(),
+                "서버 내부 오류가 발생했습니다. 관리자에게 문의해주세요.", //-> 보안상 ex.getMessage() 보내지 않음
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+
+        return ResponseEntity.status(StatusCode.INTERNAL_SERVER_ERROR.getHttpStatus()).body(response);
+    }
+
+
+    /**
+     * MethodArgumentNotValidException 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
+     * 유효성 검사 실패 시 발생하는 MethodArgumentNotValidException 예외를 처리하는 핸들러
+     * DTO에 설정된 @Valid 또는 @Validated 어노테이션을 통해 검증 실패 시 호출됨
+     * @param ex 예외 객체(MethodArgumentNotValidException)
+     * @param request request 클라이언트의 HTTP 요청 객체 (URI, Method 정보 추출용)
+     * @return HTTP 응답 객체(상태 코드 400 + 예외 메세지)
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        log.warn("[유효성 검사 실패] 요청 URI: {}, Method: {}, 예외 메시지: {}",
+                request.getRequestURI(), request.getMethod(), ex.getMessage());
+
+        // 첫 번째 필드 에러 메시지만 전달 (프론트 입장에서 제일 먼저 보여줘야 할 메시지 하나만 추출)
+        FieldError fieldError = ex.getBindingResult().getFieldError();
+        String message = (fieldError != null) ? fieldError.getDefaultMessage() : "잘못된 입력입니다.";
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                StatusCode.BAD_REQUEST.name(),
+                message, // ex.getMessage() 안 쓰는 이유: 보안 + 너무 긴 내용
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    //<---
+
+
 }

@@ -53,15 +53,17 @@ public class Member { //implements UserDetails 안하는 로직으로 변경(->S
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Enumerated(EnumType.STRING) // enum 이름 자체를 문자열로 저장
     @Column(nullable = false, length = 1)
-    private String isDeleted;
+    private IsDeleted isDeleted;
 
     @Column(updatable = false)
     private LocalDateTime deletedAt;
 
+    @Enumerated(EnumType.STRING)
     @Basic(optional = false)
     @Column(nullable = false, length = 20)
-    private String loginType;
+    private LoginType loginType;
 
     @Column(unique = true, length = 300)
     private String snsId;
@@ -70,6 +72,7 @@ public class Member { //implements UserDetails 안하는 로직으로 변경(->S
     @ManyToOne(fetch = FetchType.LAZY) // 다대일 관계 (Member는 Role 하나를 가짐)
     @JoinColumn(name = "ROLE_ID", nullable = false)  // FK 컬럼 이름, nn
     @Basic(optional = false)
+    @Enumerated(EnumType.STRING)
     private Role role;
 
     // 양방향 연관관계 객체를 만들 때 서로 참조할 수 있도록 추가함
@@ -77,15 +80,17 @@ public class Member { //implements UserDetails 안하는 로직으로 변경(->S
             fetch = FetchType.LAZY, optional = false)  // 1:1 관계로 프로필 이미지 매핑 // TODO : LAZY 로딩으로 인해 N+1 문제 발생할 수 있으므로 Fetch 전략 고려
     private ProfileImg profileImg;
 
-    // 생성일/수정일 자동 저장
+
     /**
      * 엔티티가 처음 저장되기 전에 실행되는 콜백 메서드
+     * 생성일/수정일/탈퇴여부(N)/탈퇴일(null) 자동 저장
      */
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now(); // DB에 처음 저장할 때 현재 시간 넣기
         this.updatedAt = LocalDateTime.now(); // 처음 저장 시점과 같게 설정
-        this.isDeleted = "N"; // 삭제 여부는 처음에 'N' (삭제 안 됨)
+        this.isDeleted = IsDeleted.N; // 삭제 여부는 처음에 'N' (삭제 안 됨)
+        this.deletedAt = null;
     }
 
     /**
