@@ -9,9 +9,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +18,8 @@ import java.time.LocalDateTime;
  * 프론트가 application/json으로 POST 요청 보낼 때 스프링에서 자동으로 이 DTO객체로 변환됨(잭슨라이브러리사용 +  Controller에서 @RequestBody 사용해야 함)
  */
 @Getter @Setter @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class SignUpRequestDto {
 
     @Schema(description = "사용자 이메일", example = "user@example.com")
@@ -39,7 +39,7 @@ public class SignUpRequestDto {
             message = "비밀번호는 8~16자, 영문+숫자+특수문자를 포함해야 합니다.")
     private String password;
 
-    @Schema(description = "닉네임 (50자 이내)", example = "후후후님")
+    @Schema(description = "닉네임 (50자 이내)", example = "후후후")
     @NotBlank(message = "닉네임은 필수 입력값입니다.")
     @Size(min = 2, max = 50, message = "닉네임은 2자 이상 50자 이하로 입력해주세요.")
     @Pattern(regexp = "^[가-힣a-zA-Z0-9_]+$", message = "닉네임은 한글, 영문, 숫자, _ 만 사용할 수 있습니다.")

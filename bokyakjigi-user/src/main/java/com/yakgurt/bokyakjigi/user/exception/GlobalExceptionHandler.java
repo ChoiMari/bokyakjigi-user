@@ -219,37 +219,71 @@ public class GlobalExceptionHandler {
      * DuplicateEmailException(커스텀) 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
      * DB에 중복된 이메일이 있으면 발생하는 예외 처리 메서드
      * @param ex 예외 객체(DuplicateEmailException)
-     * @return HTTP 응답 객체(상태 코드 400 + 예외 메세지) - - 보안을 위해서 ex.getMessage() 보내지 않음
+     * @return HTTP 응답 객체(상태 코드 409 + 예외 메세지) - - 보안을 위해서 ex.getMessage() 보내지 않음
      */
     @ExceptionHandler(DuplicateEmailException.class)
-    public  ResponseEntity<ErrorResponse> handleDuplicateEmail(DuplicateEmailException ex) {
+    public ResponseEntity<ErrorResponse> handleDuplicateEmail(DuplicateEmailException ex) {
         log.warn("이메일 중복 예외: {}", ex.getMessage(), ex);
         ErrorResponse response = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                StatusCode.BAD_REQUEST.name(),
+                HttpStatus.CONFLICT.value(),
+                StatusCode.CONFLICT.name(),
                 "이미 사용 중인 이메일입니다.", //-> 보안상 ex.getMessage() 보내지 않음
                 ZonedDateTime.now(ZoneOffset.UTC)
         );
 
+        return  ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    /**
+     * EmailValidationException(커스텀) 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
+     * @param ex 예외 객체(EmailValidationException)
+     * @return HTTP 응답 객체(상태 코드 400 + 예외메세지)
+     */
+    @ExceptionHandler(EmailValidationException.class)
+    public ResponseEntity<ErrorResponse> handleEmailValidation(EmailValidationException ex) {
+       log.warn("유효하지 않은 이메일 예외: {}", ex.getMessage(), ex);
+       ErrorResponse response = new ErrorResponse(
+               HttpStatus.BAD_REQUEST.value(),
+               StatusCode.BAD_REQUEST.name(),
+               "이메일 형식이 올바르지 않습니다.",
+               ZonedDateTime.now(ZoneOffset.UTC)
+       );
         return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     /**
      * DuplicateNicknameException(커스텀) 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
-     * DB에 중복된 이메일이 있으면 발생하는 예외 처리 메서드
+     * DB에 중복된 닉네임이 있으면 발생하는 예외 처리 메서드
      * @param ex 예외 객체(DuplicateNicknameException)
-     * @return HTTP 응답 객체(상태 코드 400 + 예외 메세지) - - 보안을 위해서 ex.getMessage() 보내지 않음
+     * @return HTTP 응답 객체(상태 코드 409 + 예외 메세지) - - 보안을 위해서 ex.getMessage() 보내지 않음
      */
     @ExceptionHandler(DuplicateNicknameException.class)
     public  ResponseEntity<ErrorResponse> handleDuplicateNickname(DuplicateNicknameException ex) {
         log.warn("닉네임 중복 예외: {}", ex.getMessage(), ex);
         ErrorResponse response = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                StatusCode.BAD_REQUEST.name(),
+                HttpStatus.CONFLICT.value(),
+                StatusCode.CONFLICT.name(),
                 "이미 사용 중인 닉네임입니다.", //-> 보안상 ex.getMessage() 보내지 않음
                 ZonedDateTime.now(ZoneOffset.UTC)
         );
 
+        return  ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    /**
+     * NicknameValidationException(커스텀) 예외가 발생했을 때 이 메서드가 자동 호출되도록 지정
+     * @param ex 예외 객체(NicknameValidationException)
+     * @return HTTP 응답 객체(상태 코드 400 + 예외메세지)
+     */
+    @ExceptionHandler(NicknameValidationException.class)
+    public ResponseEntity<ErrorResponse> handleNicknameValidation(NicknameValidationException ex) {
+        log.warn("유효하지 않은 닉네임 예외: {}", ex.getMessage(), ex);
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                StatusCode.BAD_REQUEST.name(),
+                "닉네임은 2~50자의 한글, 영문, 숫자, _ 만 사용할 수 있습니다.",
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
         return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 

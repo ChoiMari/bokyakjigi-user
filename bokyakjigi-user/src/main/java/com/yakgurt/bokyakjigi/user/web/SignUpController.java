@@ -3,10 +3,14 @@ package com.yakgurt.bokyakjigi.user.web;
 import com.yakgurt.bokyakjigi.user.common.response.ApiResponse;
 import com.yakgurt.bokyakjigi.user.common.response.StatusCode;
 import com.yakgurt.bokyakjigi.user.dto.SignUpRequestDto;
+import com.yakgurt.bokyakjigi.user.exception.EmailValidationException;
+import com.yakgurt.bokyakjigi.user.exception.NicknameValidationException;
 import com.yakgurt.bokyakjigi.user.service.SignUpService;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.validator.routines.EmailValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +25,8 @@ import java.time.ZonedDateTime;
 public class SignUpController {
 
     private final SignUpService signUpSvc;
+    public static final String EMAIL_REGEX = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+    public static final String NICKNAME_REGEX = "^[가-힣a-zA-Z0-9_]+$";
 
     /**
      * 이메일 중복검사 API
@@ -28,8 +34,14 @@ public class SignUpController {
      * @return 중복 없으면 true를 data에 포함하여 JSON 형태로 반환, 중복 시 서비스 계층에서 예외 발생하여 전역처리기에서 에러로 응답처리
      */
     @GetMapping("/check-email")
-    public ResponseEntity<ApiResponse<Boolean>> checkEmail(@RequestParam String email) {
+    public ResponseEntity<ApiResponse<Boolean>> checkEmail(@Parameter(description = "중복 검사 대상 이메일", required = true, example = "test1234@test.com")
+                                                                @RequestParam String email) {
         log.info("checkEmail(email={})",email);
+        if (!email.matches(EMAIL_REGEX) || !EmailValidator.getInstance().isValid(email) || email.length() > 200 ||
+                email == null || email.isBlank() ) {
+            throw new EmailValidationException("이메일 형식이 올바르지 않습니다.");
+        }
+
         signUpSvc.checkDuplicateEmail(email);
         return ResponseEntity.ok(new ApiResponse<>(StatusCode.OK.getHttpStatus().value(),
                 StatusCode.OK.name(),
@@ -44,8 +56,15 @@ public class SignUpController {
      * @return 중복 없으면 true를 data에 포함하여 JSON 형태로 반환, 중복 시 서비스 계층에서 예외 발생하여 전역처리기에서 에러로 응답처리
      */
     @GetMapping("/check-nickname")
-    public ResponseEntity<ApiResponse<Boolean>> checkNickname(@RequestParam String nickname) {
+    public ResponseEntity<ApiResponse<Boolean>> checkNickname(@Parameter(description = "중복 검사 대상 닉네임", required = true, example = "후후후111")
+                                                                  @RequestParam String nickname) {
         log.info("checkNickname(nickname={})",nickname);
+
+        if (nickname == null || nickname.isBlank()
+                || (nickname.length() < 2 || nickname.length() > 50) || !nickname.matches(NICKNAME_REGEX)) {
+            throw new NicknameValidationException("닉네임은 2~50자의 한글, 영문, 숫자, _ 만 사용할 수 있습니다.");
+        }
+
         signUpSvc.checkDuplicateNickname(nickname);
         return ResponseEntity.ok(new ApiResponse<>(StatusCode.OK.getHttpStatus().value(),
                 StatusCode.OK.name(),
