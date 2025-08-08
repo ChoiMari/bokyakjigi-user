@@ -22,6 +22,7 @@ public enum StatusCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED),// 401 인증 필요
     FORBIDDEN(HttpStatus.FORBIDDEN),// 403 권한 없음(접근 금지)
     NOT_FOUND(HttpStatus.NOT_FOUND),// 404 요청한 자원 없음
+    CONFLICT(HttpStatus.CONFLICT), // 409 서버와 충돌 발생
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE),// 415 미디어 타입 지원 안 함
 
     // 5xx
