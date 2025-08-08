@@ -4,9 +4,12 @@ import com.yakgurt.bokyakjigi.user.common.response.ApiResponse;
 import com.yakgurt.bokyakjigi.user.common.response.StatusCode;
 import com.yakgurt.bokyakjigi.user.dto.SignUpRequestDto;
 import com.yakgurt.bokyakjigi.user.exception.EmailValidationException;
+import com.yakgurt.bokyakjigi.user.exception.ErrorResponse;
 import com.yakgurt.bokyakjigi.user.exception.NicknameValidationException;
 import com.yakgurt.bokyakjigi.user.service.SignUpService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +21,15 @@ import org.springframework.web.bind.annotation.*;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Auth", description = "일반 회원가입 API")
 public class SignUpController {
 
     private final SignUpService signUpSvc;
@@ -79,6 +87,23 @@ public class SignUpController {
      * @param dto 회원가입 요청 데이터
      * @return 가입된 회원의 고유 ID를 응답 data에 포함하여 json형태로 반환 / 회원가입 실패 시에는 예외 처리기에 의해 적절한 에러 응답 반환
      */
+    @Operation(
+            summary = "회원가입",
+            description = "새로운 회원을 가입시킵니다. 성공 시 201 상태코드와 가입한 회원 ID를 반환합니다.",
+            requestBody = @RequestBody(
+                    required = true,
+                    description = "회원가입 요청 데이터",
+                    content = @Content(schema = @Schema(implementation = SignUpRequestDto.class))
+            ),
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "회원가입 성공",
+                            content = @Content(schema = @Schema(implementation = ApiResponse.class))
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 데이터",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+                    )
+            }
+    )
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<Long>> signup(@Valid @RequestBody SignUpRequestDto dto) {
         log.debug("signup 요청 email(masked)={}, nickname={}", dto.getMaskedEmail(),dto.getNickname());
