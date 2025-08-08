@@ -2,6 +2,8 @@ package com.yakgurt.bokyakjigi.user.common.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -17,13 +19,22 @@ import java.time.ZonedDateTime;
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL) // null 필드는 JSON에서 제외
 @AllArgsConstructor
+@Schema(description = "표준 API 응답 래퍼")
 public class ApiResponse <T> {
 
+    @Schema(description = "응답 코드", example = "200 또는 201")
     private final int code; // HTTP 상태 코드
+
+    @Schema(description = "상태 메시지", example = "OK 또는 CREATED")
     private final String status; // 상태 타입
+
+    @Schema(description = "상세 메시지", example = "성공")
     private final String message; // 응답 메시지
+
+    @Schema(description = "실제 데이터")
     private final T data; // 실제 응답 데이터
 
+    @Schema(description = "응답 생성 시간")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX", timezone = "UTC")
     private final ZonedDateTime timestamp; //응답 생성 시간
 
