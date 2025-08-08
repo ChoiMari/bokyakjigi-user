@@ -37,7 +37,7 @@ ext {
 	//springdocVersion = '2.1.0'
 	springdocVersion = '2.5.0'
 	mockitoInlineVersion = '5.2.0'
-
+	commonsValidatorVersion = '1.7'
 }
 
 dependencyManagement {
@@ -107,6 +107,10 @@ dependencies {
 
 	//java.time.ZonedDateTime 타입을 Jackson이 직렬화(Serialization)하기 위해서 추가함
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2'
+
+	// 메일 유효성 검사 유틸
+	implementation "commons-validator:commons-validator:${commonsValidatorVersion}"
+
 }
 
 // 테스트 실행 시 JUnit 플랫폼 사용
