@@ -63,6 +63,7 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "인증 실패, 잘못된 이메일 또는 비밀번호",
                     content = @Content(mediaType = "application/json"))
     })
+
     @PostMapping("/signin")
     public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequestDto dto,
                                     BindingResult bindingResult){
@@ -82,15 +83,13 @@ public class AuthController {
             // HTTP 400 상태 코드와 errorList를 JSON형태로 클라이언트(프론트서버)에 응답
         }
 
-        // 유효성 검사에 문제 없으면 서비스에 로그인 요청 전달 -> JWT 토큰 발급
-            String accessToken = authService.signIn(dto.getEmail(),dto.getPassword());
-            // JWT 토큰 응답 DTO 생성
-            SignInResponseDto responseDto = new SignInResponseDto(accessToken);
+            // 유효성 검사에 문제 없으면 서비스에 로그인 요청 전달 -> JWT 토큰 발급
+            SignInResponseDto response  = authService.signIn(dto.getEmail(),dto.getPassword());
 
             log.info("signIn success - email={}", dto.getEmail());
 
             // 200 OK 상태 코드와 함께 응답 반환
-            return ResponseEntity.ok(responseDto); // 스프링 부트는 내부적으로 Jackson(ObjectMapper) 를 사용해서 DTO → JSON 으로 자동 직렬화
+            return ResponseEntity.ok(response); // 스프링 부트는 내부적으로 Jackson(ObjectMapper) 를 사용해서 DTO → JSON 으로 자동 직렬화
             // @RestController + ResponseEntity.ok(dto) 조합 → JSON 자동 직렬화
     }
 }
