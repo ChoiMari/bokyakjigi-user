@@ -109,7 +109,15 @@ dependencies {
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.2'
 
 	// 메일 유효성 검사 유틸
-	implementation "commons-validator:commons-validator:${commonsValidatorVersion}"
+	//implementation "commons-validator:commons-validator:${commonsValidatorVersion}"
+
+	// 메일 유효성 검사 유틸 (Commons Validator) - commons-logging 제외
+	implementation("commons-validator:commons-validator:${commonsValidatorVersion}") {
+		exclude group: "commons-logging", module: "commons-logging"
+	}
+
+	//redis
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis' // 버전은 spring이 자동관리
 
 }
 
