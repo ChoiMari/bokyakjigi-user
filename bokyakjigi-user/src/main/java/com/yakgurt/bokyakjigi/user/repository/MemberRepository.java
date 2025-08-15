@@ -1,5 +1,6 @@
 package com.yakgurt.bokyakjigi.user.repository;
 
+import com.yakgurt.bokyakjigi.user.domain.IsDeleted;
 import com.yakgurt.bokyakjigi.user.domain.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -20,5 +21,5 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findBySnsId(String snsId);
 
     // 탈퇴 안 한 활성 사용자만 조회
-    Optional<Member> findByEmailAndIsDeleted(String email, String isDeleted);
+    Optional<Member> findByEmailAndIsDeleted(String email, IsDeleted isDeleted);
 }
