@@ -7,6 +7,7 @@ import com.yakgurt.bokyakjigi.user.security.JwtProvider;
 import com.yakgurt.bokyakjigi.user.vo.MemberVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -27,6 +28,7 @@ public class AuthService {
     private final PasswordEncoder pwdEncoder;
     private final JwtProvider jwtProvider;
     private final JwtProperties jwtProperties;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 로그인 처리 메서드
@@ -51,10 +53,20 @@ public class AuthService {
         }
 
         MemberVO memberVO = new MemberVO(member.getId(), member.getEmail(), member.getNickname(), member.getRole().getRoleName()); // 필요한 필드만
+        // 엑세스 토큰
+        Duration accessTokenValidity = Duration.ofMinutes(jwtProperties.getAccessTokenExpirationMinutes()); // 토큰 만료시간
+        String token = jwtProvider.generateAccessToken(accessTokenValidity, memberVO);
 
-        Duration tokenValidity = Duration.ofMinutes(jwtProperties.getAccessTokenExpirationMinutes()); // 토큰 만료시간
+        //Refresh Token 유효기간
+        Duration refreshTokenValidity = Duration.ofDays(jwtProperties.getRefreshTokenExpirationDays());
+        // Duration : java 8 이상에서 제공하는 시간 단위 다루는 클래스. jwt 만료시간 설정 위해 사용
+        // jwtProperties.getAccessTokenExpirationMinutes() :  application.yml 혹은 properties에서 설정한 리프레시 토큰 만료일(숫자) 가져오기(14일로 설정해둠)
+        String refreshToken = jwtProvider.generateRefreshToken(refreshTokenValidity, memberVO);
 
-        String token = jwtProvider.generateAccessToken(tokenValidity, memberVO);
+        //Redis에 저장 (Key: "RT:{memberId}", Value: refreshToken, TTL: 14일)
+        String redisKey = "RT:" + member.getId(); // RT : RefreshToken 약어
+        redisTemplate.opsForValue().set(redisKey, refreshToken, refreshTokenValidity);
+
         log.info("signIn success - email={}", email);
         return token;
     }
