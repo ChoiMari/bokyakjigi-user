@@ -60,7 +60,8 @@ public class JwtProvider {
                 .add("typ", "JWT")
                 .and()
                 .claims() // ← 여기에 전체 클레임 입력
-                .add("sub", memberVO.getEmail())
+                .add("sub", String.valueOf(memberVO.getId())) // PK를 sub로, JWT 표준 (RFC 7519)에서는 sub를 문자열로 요구함
+                .add("email", memberVO.getEmail())
                 .add("iss", jwtProperties.getIssuer())
                 .add("iat", now.getTime() / 1000)
                 .add("exp", expiryDate.getTime() / 1000)
@@ -163,5 +164,40 @@ public class JwtProvider {
         }
     }
 
+    /**
+     * Refresh Token을 생성하는 메서드
+     * payload는 memberId(PK) 정도로 최소화
+     * Redis(In-Memory DB에 저장)해서 TTL(유효기간) 관리(자동으로 삭제)
+     * @param expiredAt 토큰 유효기간(Duration)
+     * @param memberVO 토큰에 담을 사용자 정보
+     * @return 생성된 JWT 리프레시 토큰 문자열
+     */
+    public String generateRefreshToken(Duration expiredAt, MemberVO memberVO) {
+        Date now = new Date(); // 토큰 발급 시간
+
+        // 토큰 만료 시간 계산(현재시간 + expiredAt 밀리초)
+        Date expiryDate = new Date(now.getTime() + expiredAt.toMillis());
+
+        return Jwts.builder()
+                .header()
+                .add("typ", "JWT") // JWT 토큰임을 명시, "typ":"JWT"
+                .and()
+                .claims() // JWT 페이로드(claims) 설정 시작
+                .add("sub", String.valueOf(memberVO.getId()))
+                .add("iat", now.getTime() / 1000)  // iat(issued at): 토큰 발급 시각, 초 단위로 넣음
+                .add("exp", expiryDate.getTime() / 1000)  // exp(expiration): 토큰 만료 시각, 초 단위, 이 시간 이후 토큰은 무효
+                .and()
+                .signWith(secretKey) // 서명(Signature) 설정
+                .compact();  // 최종적으로 JWT 문자열 생성
+//deprecated 경고 때문에 변경함
+//        return Jwts.builder()
+//                .setHeaderParam(Header.TYPE, Header.JWT_TYPE) // JWT 헤더 타입
+//                .setIssuer(jwtProperties.getIssuer())         // 발급자
+//                .setIssuedAt(now)                             // 발급 시간
+//                .setExpiration(expiryDate)                    // 만료 시간
+//                .setSubject(String.valueOf(memberVO.getId())) // 사용자 식별자(memberId PK)
+//                .signWith(secretKey, SignatureAlgorithm.HS256) // 서명
+//                .compact();
+    }
 
 }
