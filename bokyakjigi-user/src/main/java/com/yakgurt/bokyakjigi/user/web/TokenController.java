@@ -32,7 +32,7 @@ public class TokenController {
     @Operation(summary = "Access Token 재발급", description = "클라이언트가 보유한 Refresh Token으로 새로운 Access Token 발급")
     public ResponseEntity<?> refreshAccessToken(@Valid @RequestBody AccessTokenRefreshRequestDto dto,
                                                 BindingResult bindingResult){
-        log.debug("[Token] Refresh Token 재발급 요청 : {}", dto.getRefreshToken().substring(0,5) + "*****"); //-> 마스킹 처리해서 안전하게 로그 찍음
+
         if(bindingResult.hasErrors()) { // 요청dto 유효성 검사 실패 시 실행됨(null, 빈문자열, 공백)
             log.warn("[Token] Refresh Token 유효성 검사 실패 : {}", bindingResult.getAllErrors());
             String message = (bindingResult.getFieldError() != null) ? bindingResult.getFieldError().getDefaultMessage() : "[Refresh Token 예외]유효하지 않은 잘못된 요청입니다.";
