@@ -38,8 +38,7 @@ public class TokenController {
             String message = (bindingResult.getFieldError() != null) ? bindingResult.getFieldError().getDefaultMessage() : "[Refresh Token 예외]유효하지 않은 잘못된 요청입니다.";
             throw new MissingRefreshTokenException(message); //-> 예외 전역처리기에서 잡음
         }
-
-        String refreshToken = dto.getRefreshToken();
+        String refreshToken = dto.getRefreshToken().trim();
         // 서비스 호출 -> access token 재발급
         String accessToken = refreshSvc.reissueAccessToken(refreshToken);
         log.info("[Token] Access Token 재발급 완료");
