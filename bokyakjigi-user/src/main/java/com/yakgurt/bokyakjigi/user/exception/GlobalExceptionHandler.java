@@ -14,7 +14,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
@@ -183,6 +182,53 @@ public class GlobalExceptionHandler {
     }
 
     //<--------
+
+
+
+    //--------> Refresh Token으로 Access Token 재발급 시 발생하는 예외 처리
+
+    /**
+     * MissingRefreshTokenException 예외가 발생했을 때 이 메서드가 자동으로 호출되도록 지정함
+     * Refresh Token 요청 DTO가 컨트롤러에서 @Valid 검사에서 발생한 예외를 처리
+     * 프론트에서 Reresh Token을 null, 빈문자열, 공백으로 보냈을 때 발생 @NotBlank(message = "...") 메시지를 그대로 예외응답으로 보냄
+     * @param ex MissingRefreshTokenException 예외 객체
+     * @param request HTTP 요청 정보 (URI, 메서드 등)
+     * @return HTTP 응답 객체(상태 코드 400 + 예외메세지), 클라이언트 요청문제이므로 400
+     */
+    @ExceptionHandler(MissingRefreshTokenException.class)
+    public ResponseEntity<ErrorResponse> handleMissingRefreshToken(MissingRefreshTokenException ex, HttpServletRequest request) {
+        log.warn("[JWT] Refresh Token 유효성 예외 발생 : {}", ex.getMessage(), ex);
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                StatusCode.BAD_REQUEST.name(),
+                ex.getMessage(), //-> Refresh Token이 @NotBlank에 걸릴 때라 보안에 문제없음
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    /**
+     * InvalidRefreshTokenException 예외가 발생했을 때 이 메서드가 자동으로 호출되도록 지정함
+     * RefreshTokenRedisService에서 요청으로 온 refresh token이 Redis에 조회되지 않을 때 던지는 예외를 처리함 
+     * 조회가 안된다? -> 위조 되었거나 TTL설정으로 자동 삭제 되어 만료되었음을 의미함
+     * 프론트에는 이 예외 받아서 재 로그인 처리하면 됨
+     * @param ex InvalidRefreshTokenException 예외 객체
+     * @param request HTTP 요청 정보
+     * @return HTTP 응답 객체(상태 코드 401 + 예외메세지)
+     */
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRefreshToken(InvalidRefreshTokenException ex, HttpServletRequest request) {
+        log.warn("[Redis] Refresh Token이 Redis에서 조회 되지 않음(위조 또는 만료) : {}", ex.getMessage(), ex);
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(), //401
+                StatusCode.UNAUTHORIZED.name(),
+                ex.getMessage(), // 예외 던질 때 아규먼트로 넣은 message //-> 민감정보 들어있지 않으므로 이대로 보내도 보안상 문제 없음
+                // "Refresh Token이 유효하지 않거나 만료되었습니다. 재로그인이 필요합니다."라고 예외 던질 때 message로 넣었기 때문에
+                ZonedDateTime.now(ZoneOffset.UTC) // 예외 발생 시간
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); 
+    }
+    //<-------
 
 
     /**
