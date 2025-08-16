@@ -200,4 +200,55 @@ public class JwtProvider {
 //                .compact();
     }
 
+
+    /**
+     * 요청으로 보낸 refresh token에서 memberId를 추출하는 메서드
+     * 클라이언트에서 전달받은 refreshToken을 파싱하여 JWT payload(claims)에서 memberId(sub)를 추출
+     * sub(claims)가 없거나 Long 변환이 불가하면 InvalidTokenException 발생
+     * @param refreshToken refreshToken 클라이언트에서 요청 dto로 전달받은 JWT Refresh Token 문자열
+     * @return Long memberId JWT 페이로드에 담긴 memberId(PK)
+     */
+    public Long getMemberIdFromRefreshToken(String refreshToken) {
+        try{
+            Claims claims = Jwts.parser()  // JwtParserBuilder 시작
+                    .verifyWith(secretKey) // 서버에서 설정한 비밀 키로 서명 검증
+                    .build() // JwtParser 객체 생성
+                    .parseSignedClaims(refreshToken)// JWT 문자열 파싱 + 서명 검증
+                    .getPayload(); // JWT 페이로드(claims) 반환
+            // claims에서 memberId(sub) 추출
+            String memberId = claims.get("sub", String.class); //-> sub가 존재하지 않으면 null반환
+            if(memberId == null) {
+                throw new InvalidTokenException("토큰에 memberId가 없습니다.");
+            }
+            return Long.valueOf(memberId);
+
+        } catch (NumberFormatException e) {
+            // Long.valueOf(memberId)변환 시 예외
+            throw new InvalidTokenException("토큰의 memberId 형식이 올바르지 않습니다.", e);
+        } catch(ExpiredJwtException e) { // 던진 예외 처리하는 로직 : 커스텀 예외 클래스 -> 전역예외처리클래스(@RestControllerAdvice)
+            throw new TokenExpiredException("만료된 토큰입니다.", e); // 토큰이 만료된 경우
+            // 변경 전 : throw new IllegalArgumentException("만료된 토큰입니다.", e);
+        } catch (UnsupportedJwtException e) {
+            // 지원되지 않는 JWT 형식
+            throw new InvalidTokenException("지원되지 않는 JWT 형식입니다.", e);
+        } catch (MalformedJwtException e) {
+            // 잘못 구성된 JWT (예: 구문 오류, 구분자 부족 등)
+            throw new InvalidTokenException("손상된 JWT 토큰입니다.", e);
+        } catch (SecurityException e) {
+            // 서명 검증 실패
+            throw new InvalidTokenException("JWT 서명 검증에 실패했습니다.", e);
+        } catch (ClassCastException e) {
+            // 클레임 타입이 기대한 구조가 아님
+            throw new InvalidTokenException("JWT 클레임 구조가 잘못되었습니다.", e);
+        }  catch(JwtException | IllegalArgumentException e){
+            // JWT 구조가 깨졌거나 시그니처가 위조되었거나 등
+            throw new InvalidTokenException("유효하지 않은 토큰입니다.", e);
+            // 변경 전 : throw new IllegalArgumentException("유효하지 않은 토큰입니다.", e);
+        } catch (Exception e) {
+            // 기타 예상하지 못한 모든 예외 처리
+            throw new InvalidTokenException("토큰 처리 중 예기치 못한 오류가 발생했습니다.", e);
+        }
+
+    }
+
 }
