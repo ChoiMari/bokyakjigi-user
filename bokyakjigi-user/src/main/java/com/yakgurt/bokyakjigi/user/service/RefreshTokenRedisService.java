@@ -61,6 +61,7 @@ public class RefreshTokenRedisService {
         Member member = memberOpt.get();
         //MemberVO객체 생성
         MemberVO memberVO = new MemberVO(member.getId(), member.getEmail(), member.getNickname(), member.getRole().getRoleName());
+
         // Redis에서 저장된 Refresh Token 조회
         String redisKey = "RT:" + memberVO.getId().toString();
         Object storedTokenObj = redisTemplate.opsForValue().get(redisKey); //키값으로 value 반환받음(refresh token)
@@ -69,7 +70,7 @@ public class RefreshTokenRedisService {
         if(storedTokenObj == null || !refreshToken.equals(storedTokenObj.toString())){
             //refresh token이 redis에 없거나 요청으로 온 refresh 토큰과 같지 않는경우 실행
             log.warn("[JWT] Redis에 Refresh Token이 존재하지 않습니다.-> 위조 또는 만료. memberId={}", memberVO.getId());
-            throw new InvalidRedisKeyException("Refresh Token이 유효하지 않거나 만료되었습니다. 재로그인이 필요합니다.");
+            throw new InvalidRefreshTokenException("Refresh Token이 유효하지 않거나 만료되었습니다. 재로그인이 필요합니다.");
         }
 
         // 새 Access Token 발급
