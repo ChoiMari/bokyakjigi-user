@@ -2,7 +2,6 @@ package com.yakgurt.bokyakjigi.user.web;
 
 import com.yakgurt.bokyakjigi.user.dto.SignInRequestDto;
 import com.yakgurt.bokyakjigi.user.dto.SignInResponseDto;
-import com.yakgurt.bokyakjigi.user.security.JwtProvider;
 import com.yakgurt.bokyakjigi.user.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,15 +12,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -63,7 +59,6 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "인증 실패, 잘못된 이메일 또는 비밀번호",
                     content = @Content(mediaType = "application/json"))
     })
-
     @PostMapping("/signin")
     public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequestDto dto,
                                     BindingResult bindingResult){
@@ -92,4 +87,5 @@ public class AuthController {
             return ResponseEntity.ok(response); // 스프링 부트는 내부적으로 Jackson(ObjectMapper) 를 사용해서 DTO → JSON 으로 자동 직렬화
             // @RestController + ResponseEntity.ok(dto) 조합 → JSON 자동 직렬화
     }
+
 }

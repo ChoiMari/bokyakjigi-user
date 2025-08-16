@@ -30,7 +30,9 @@ public class AuthService {
     private final PasswordEncoder pwdEncoder;
     private final JwtProvider jwtProvider;
     private final JwtProperties jwtProperties;
-    private final RedisTemplate<String, Object> redisTemplate;
+
+    private final RedisTemplate<String, Object> redisTemplate; //-> 주입 받은 순간에는 직렬화 안됨
+    //-> opsForValue().set() 호출 시 → 직렬화, opsForValue().get() 호출 시 → 역직렬화
 
     /**
      * 로그인 처리 메서드
@@ -65,11 +67,11 @@ public class AuthService {
         // jwtProperties.getAccessTokenExpirationMinutes() :  application.yml 혹은 properties에서 설정한 리프레시 토큰 만료일(숫자) 가져오기(14일로 설정해둠)
         String refreshToken = jwtProvider.generateRefreshToken(refreshTokenValidity, memberVO);
 
+        String redisKey = "RT:" + member.getId();
         //Redis에 저장 (Key: "RT:{memberId}", Value: refreshToken, TTL: 14일)
-        String redisKey = "RT:" + member.getId(); // RT : RefreshToken 약어
-        redisTemplate.opsForValue().set(redisKey, refreshToken, refreshTokenValidity);
+        redisTemplate.opsForValue().set(redisKey, refreshToken, refreshTokenValidity); //-> 저장 : 직렬화
 
-        log.info("signIn success - email={} Redis Key={}", email, redisKey);
+        log.info("signIn success - email={} Redis Key={}", email, member.getId());
         return new SignInResponseDto(accessToken, refreshToken);
     }
 }

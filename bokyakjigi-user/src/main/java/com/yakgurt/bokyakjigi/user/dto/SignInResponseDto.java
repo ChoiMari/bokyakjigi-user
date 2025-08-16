@@ -2,6 +2,7 @@ package com.yakgurt.bokyakjigi.user.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * sign in 응답 DTO
@@ -10,6 +11,7 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 public class SignInResponseDto {
     private String accessToken;
     private String refreshToken;
