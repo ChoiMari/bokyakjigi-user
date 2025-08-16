@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yakgurt.bokyakjigi.user.config.jwt.JwtProperties;
 import com.yakgurt.bokyakjigi.user.exception.InvalidTokenException;
+import com.yakgurt.bokyakjigi.user.exception.MissingRefreshTokenException;
 import com.yakgurt.bokyakjigi.user.exception.MissingUserClaimException;
 import com.yakgurt.bokyakjigi.user.exception.TokenExpiredException;
 import com.yakgurt.bokyakjigi.user.vo.MemberVO;
@@ -209,6 +210,9 @@ public class JwtProvider {
      * @return Long memberId JWT 페이로드에 담긴 memberId(PK)
      */
     public Long getMemberIdFromRefreshToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            throw new MissingRefreshTokenException("Refresh Token은 필수입니다."); // 명확하게 null/빈 문자열 구분
+        }
         try{
             Claims claims = Jwts.parser()  // JwtParserBuilder 시작
                     .verifyWith(secretKey) // 서버에서 설정한 비밀 키로 서명 검증
@@ -216,11 +220,11 @@ public class JwtProvider {
                     .parseSignedClaims(refreshToken)// JWT 문자열 파싱 + 서명 검증
                     .getPayload(); // JWT 페이로드(claims) 반환
             // claims에서 memberId(sub) 추출
-            String memberId = claims.get("sub", String.class); //-> sub가 존재하지 않으면 null반환
-            if(memberId == null) {
-                throw new InvalidTokenException("토큰에 memberId가 없습니다.");
+            String memberIdStr = claims.get("sub", String.class); //-> sub가 존재하지 않으면 null반환
+            if(memberIdStr == null || memberIdStr.trim().isEmpty()) {
+                throw new InvalidTokenException("토큰에 memberId(sub)가 없습니다.");
             }
-            return Long.valueOf(memberId);
+            return Long.valueOf(memberIdStr);
 
         } catch (NumberFormatException e) {
             // Long.valueOf(memberId)변환 시 예외
