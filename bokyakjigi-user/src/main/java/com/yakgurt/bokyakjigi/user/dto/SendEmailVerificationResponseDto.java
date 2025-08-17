@@ -1,5 +1,6 @@
 package com.yakgurt.bokyakjigi.user.dto;
 
+import com.yakgurt.bokyakjigi.user.common.response.EmailVerificationPurpose;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,4 +33,7 @@ public class SendEmailVerificationResponseDto {
      */
     @Schema(description = "토큰 유효 시간(초 단위). 프론트 안내용", example = "86400")
     private Long remainingTTL;
+
+    @Schema(description = "이메일 발송 용도", example = "SIGNUP")
+    private EmailVerificationPurpose purpose;
 }
