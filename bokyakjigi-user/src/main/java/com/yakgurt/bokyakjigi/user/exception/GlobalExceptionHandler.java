@@ -2,6 +2,7 @@ package com.yakgurt.bokyakjigi.user.exception;
 
 import com.yakgurt.bokyakjigi.user.common.response.StatusCode;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -108,7 +110,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex){
-        log.warn("[Sign-in] 로그인 사용자 정보 없음(사용자 조회 실패) 예외 발생 : {}",ex.getMessage(),ex);
+        log.warn("[Sign-in] 로그인 사용자 정보 없음(사용자 조회 실패) 예외 발생 : {}",ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.UNAUTHORIZED.value(),
                 StatusCode.UNAUTHORIZED.name(),
@@ -127,7 +129,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex){
-        log.warn("[Sign-in] 로그인 사용자의 비밀번호 불일치 예외 발생 : {}", ex.getMessage(),ex);
+        log.warn("[Sign-in] 로그인 사용자의 비밀번호 불일치 예외 발생 : {}", ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.UNAUTHORIZED.value(),
                 StatusCode.UNAUTHORIZED.name(),
@@ -269,7 +271,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DuplicateEmailException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateEmail(DuplicateEmailException ex) {
-        log.warn("이메일 중복 예외: {}", ex.getMessage(), ex);
+        log.warn("이메일 중복 예외: {}", ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.CONFLICT.value(),
                 StatusCode.CONFLICT.name(),
@@ -287,7 +289,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(EmailValidationException.class)
     public ResponseEntity<ErrorResponse> handleEmailValidation(EmailValidationException ex) {
-       log.warn("유효하지 않은 이메일 예외: {}", ex.getMessage(), ex);
+       log.warn("유효하지 않은 이메일 예외: {}", ex.getMessage());
        ErrorResponse response = new ErrorResponse(
                HttpStatus.BAD_REQUEST.value(),
                StatusCode.BAD_REQUEST.name(),
@@ -305,7 +307,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DuplicateNicknameException.class)
     public  ResponseEntity<ErrorResponse> handleDuplicateNickname(DuplicateNicknameException ex) {
-        log.warn("닉네임 중복 예외: {}", ex.getMessage(), ex);
+        log.warn("닉네임 중복 예외: {}", ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.CONFLICT.value(),
                 StatusCode.CONFLICT.name(),
@@ -323,7 +325,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(NicknameValidationException.class)
     public ResponseEntity<ErrorResponse> handleNicknameValidation(NicknameValidationException ex) {
-        log.warn("유효하지 않은 닉네임 예외: {}", ex.getMessage(), ex);
+        log.warn("유효하지 않은 닉네임 예외: {}", ex.getMessage());
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 StatusCode.BAD_REQUEST.name(),
@@ -341,7 +343,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(RoleNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleRoleNotFound(RoleNotFoundException ex) {
-        log.error("권한을 찾을 수 없는 예외 : {}", ex.getMessage(), ex);
+        log.error("권한을 찾을 수 없는 예외 : {}", ex.getMessage());
 
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -383,5 +385,48 @@ public class GlobalExceptionHandler {
 
     //<---
 
+    /**
+     * MethodArgumentTypeMismatchException 예외가 발생 했을 때 이 메세드가 자동 호출되도록 지정
+     *  @PathVariable, @RequestParam 등에서 타입 불일치 발생 시 호출
+     *  예: /users/{id}에서 id(Long)인데 "abc" 들어올 경우
+     * @param ex 예외 객체(MethodArgumentTypeMismatchException)
+     * @param request request 클라이언트의 HTTP 요청 객체 (URI, Method 정보 추출용)
+     * @return HTTP 응답 객체(상태 코드 400 + 예외 메세지)
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        log.warn("[타입 불일치] 요청 URI: {}, Method: {}, 예외 메세지: {}", request.getRequestURI(), request.getMethod(),ex.getMessage());
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                StatusCode.BAD_REQUEST.name(),
+                "[타입 불일치] 요청 파라미터 타입이 올바르지 않습니다.",
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 
+
+    /**
+     * Java Bean @Validation에서 검증 실패 시 발생(@NotNull, @Size, @Email 같은 어노테이션 검증 실패용)
+     * @param ex 예외 객체(ConstraintViolationException)
+     * @param request request 클라이언트의 HTTP 요청 객체 (URI, Method 정보 추출용)
+     * @return HTTP 응답 객체(상태 코드 400 + 예외 메세지)
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest request) {
+        log.warn("[어노테이션 유효성 서비스 레이어 검증 실패] 요청 URI: {}, Method: {}, 예외 메세지: {}", request.getRequestURI(), request.getMethod(),ex.getMessage());
+        String message = ex.getConstraintViolations()
+                .stream()
+                .findFirst()
+                .map(cv -> cv.getMessage()) // 검증 실패 첫 번째 오류 메시지만 반환
+                .orElse("잘못된 입력입니다.");
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                StatusCode.BAD_REQUEST.name(),
+                message,
+                ZonedDateTime.now(ZoneOffset.UTC)
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 }
